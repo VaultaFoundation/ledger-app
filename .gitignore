@@ -9,3 +9,4 @@ fuzz/corpus/
 fuzz/build/
 tests/functional/snapshots-tmp/
 tests/functional/venv/
+private_app_env
