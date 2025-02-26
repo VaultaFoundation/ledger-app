@@ -18,6 +18,8 @@ cd ledger-test
 The [ledger-app-dev-tools](https://github.com/LedgerHQ/ledger-app-builder/pkgs/container/ledger-app-builder%2Fledger-app-dev-tools)
 docker image contains all the required tools and libraries to **build**, **test** and **load** an application.
 
+Ledger's general quick start guide to development and [integration with VS Code](https://developers.ledger.com/docs/device-app/beginner/vscode-extension)
+
 2) You can download the development env from the ghcr.io docker repository
 
 ```shell
@@ -44,12 +46,43 @@ bash-5.1$ BOLOS_SDK=$NANOS_SDK make
 
 ```shell
 cd /app
-# create python virtual env
-python3 -m venv private_app_env
+# create python virtual env 
+python3 -m venv private_app_env --system-site-packages
 # activate python virtual env
-source private_app_env/bin/activate  # On Windows, use private_app_env\Scripts\Activate.ps1
-# Install Ledger blue (tool to load the app)
-python3 -m pip install ledgerblue
+source private_app_env/bin/activate  
+```
+
+## Testing Via The Emulator 
+
+###  `Linux`
+
+```
+cd ledger-app # enter directory for EOS Ledger App
+sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY=$DISPLAY ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
+cd /app
+source private_app_env/bin/activate
+speculos build/nanos/bin/app.elf --model nanos
+```
+
+###  `MacOS`
+
+XQuartz is the official X server implementation for macOS.
+
+Download and install XQuartz from:
+👉 https://www.xquartz.org
+After installation, *restart* your computer for changes to take effect. 
+
+#### Setup MacOS
+1) update XQuartz->Settings to allow `network connection`. Shutdown XQuartz
+2) run  `xhost + 127.0.0.1` to allow access XTerm Access 
+3) Start with `open -a XQuartz` 
+
+```
+cd ledger-app # enter directory for EOS Ledger App
+sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY="host.docker.internal:0" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
+cd /app
+source private_app_env/bin/activate
+speculos build/nanos/bin/app.elf --model nanos
 ```
 
 ## Compilation Options
@@ -77,34 +110,7 @@ sudo docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" le
 bash-5.1$ make scan-build
 ```
 
-## Testing Via The Emulator 
-
-### `Linux`
-
-
-### `MacOS`
-
-XQuartz is the official X server implementation for macOS.
-
-Download and install XQuartz from:
-👉 https://www.xquartz.org
-After installation, *restart* your computer for changes to take effect. 
-
-#### Setup MacOS
-1) Start XTerm with `open -a XQuartz` 
-2) update XQuartz->Settings to allow `network connection`. Shutdown XQuartz
-3) run  `xhost + 127.0.0.1` to allow access XTerm Access 
-4) Start with `open -a XQuartz` 
-
-```
-cd ledger-app # enter directory for EOS Ledger App
-sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY="host.docker.internal:0" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
-source private_app_env/bin/activate
-speculos build/nanos/bin/app.elf --model nanos
-```
-
-
-### Setup Linux 
+## Physical Device 
 
 ### Loading on a physical device
 
@@ -112,6 +118,7 @@ This step will vary slightly depending on your platform.
 
 > Your physical device must be connected, unlocked and the screen showing the dashboard (not inside an application).
 
+####  `Linux`
 First make sure you have the proper udev rules added on your host.
 See [udev-rules](https://github.com/LedgerHQ/udev-rules)
 
@@ -120,19 +127,7 @@ sudo wget -O /etc/udev/rules.d/20-hw1.rules https://raw.githubusercontent.com/Le
 sudo udevadm control --reload-rules
 ```
 
-#### Physical Device 
-
-> It is assumed you have [Python](https://www.python.org/downloads/) installed on your computer.
-
-Run these commands on your host from the app's source folder once you have built the app
-for the device you want:
-
-```shell
-# Load the app.
-python3 -m ledgerblue.runScript --scp --fileName bin/app.apdu --elfFile bin/app.elf
-```
-
-## Unit Tests
+## Running Tests
 
 The application comes with functional tests,
 implemented with Ledger's [Ragger](https://github.com/LedgerHQ/ragger) test framework.
@@ -142,21 +137,45 @@ Install the tests requirements:
 
 ```shell
 pip install -r tests/functional/requirements.txt
+export PYTHONPATH=$PYTHONPATH:/app/private_app_env/lib/python3.9/site-packages
+pytest tests/functional/ --tb=short -v --device nanos
 ```
 
-Then you can:
+You can run emulated tests for a specific device or for all devices. Set `--device` to `all` for all devices.
+Use `--display` to see the emulated UI as the tests are run. The default mode runs the emulator in headless mode.
 
-Run the functional tests (here for nanos but available for any device once you have built the binaries):
+```shell
+pytest tests/functional/ -v --tb=short --device=nanos --display
+```
 
+This is a run in headless mode for `nanos`
 ```shell
 pytest tests/functional/ --tb=short -v --device nanos
 ```
 
-Or run your app directly with Speculos
+##  Issues and Solutions
 
-```shell
-speculos --model nanos build/nanos/bin/app.elf
+#### Error Installing PyQt5
+
+Here are the steps to get around the following error :
 ```
+Collecting PyQt5
+  Downloading PyQt5-5.15.11.tar.gz (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 17.1 MB/s eta 0:00:00
+  Installing build dependencies ... done
+  Getting requirements to build wheel ... done
+  Preparing metadata (pyproject.toml) ... error
+  error: subprocess-exited-with-error
+  
+  × Preparing metadata (pyproject.toml) did not run successfully.
+ ```
+
+You should not need to install PyQt5 as the dependency should already be install with the docker image. Make sure to use the `--system-site-packages` option when creating the python virtual environment. This will use the existing site packages that come with the docker container. Then make sure that the versions of `ragger` and `speculos` match the [Dockerfile](https://github.com/LedgerHQ/ledger-app-builder/blob/master/dev-tools/Dockerfile)
+
+#### `Can't Find Module`
+
+Typically the error will be something like 
+`E   ModuleNotFoundError: No module named 'pycoin'`
 
 ## References
 
@@ -164,6 +183,6 @@ Full instructions are on [Ledger Developer Portal](https://developers.ledger.com
 
 ## Developer Notes
 
-[Setup Tools, Emulator, and Testing](./docs/Ledger-Developer-Notes.md)
+[Links to Documentation and GitHubs related to Ledger Development](./docs/Ledger-Developer-Notes.md)
 
 
