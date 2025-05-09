@@ -18,7 +18,7 @@
         "data": {
           "from": "alicetest123",
           "to": "alicetestlio",
-          "quantity": "1.0000 XYZ",
+          "quantity": "1.0000 A",
           "memo": "sw3"
         },
         "hex_data": "3044c85865855c34405dcc5865855c3410270000000000000458595a0000000003737733"

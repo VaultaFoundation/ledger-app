@@ -96,7 +96,7 @@ void ui_display_public_key_flow(void) {
     nbgl_useCaseAddressReview(tmpCtx.publicKeyContext.address,
                               NULL,
                               &C_app_eos_64px,
-                              "Verify Eos address",
+                              "Verify Vaulta address",
                               NULL,
                               display_address_callback);
 }

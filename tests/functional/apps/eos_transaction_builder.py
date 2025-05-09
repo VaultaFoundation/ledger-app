@@ -150,17 +150,8 @@ class TransferAction(Action):
 
         return parameters
 
-class SwapToAction(Action):
-    def encode_action_parameters(self, data):
-        parameters = encode_name(data['from'])
-        parameters += encode_name(data['to'])
-        parameters += encode_asset(data['quantity'])
-        memo = data['memo']
-        parameters += encode_fc_uint(len(memo))
-        if len(memo) > 0:
-            parameters += pack(f'{len(memo)}s', data['memo'].encode())
-
-        return parameters
+class SwapToAction(TransferAction):
+    pass
 
 class VoteProducerAction(Action):
     def encode_action_parameters(self, data):
