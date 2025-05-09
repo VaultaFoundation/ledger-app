@@ -28,13 +28,19 @@
 #include "eos_parse_unknown.h"
 
 #define EOSIO_TOKEN          0x5530EA033482A600
+#define CORE_VAULTA        0x46B72829076C0E24
+
 #define EOSIO_TOKEN_TRANSFER 0xCDCD3C2D57000000
+#define VAULTA_SWAPTO      0xC70D5CD000000000
 
 #define EOSIO              0x5530EA0000000000
+
+
 #define EOSIO_DELEGATEBW   0x4AA2A61B2A3F0000
 #define EOSIO_UNDELEGATEBW 0xD4D2A8A986CA8FC0
 #define EOSIO_VOTEPRODUCER 0xDD32AADE89D21570
 #define EOSIO_BUYRAM       0x3EBD734800000000
+
 #define EOSIO_BUYRAMBYTES  0x3EBD7348FECAB000
 #define EOSIO_SELLRAM      0xC2A31B9A40000000
 #define EOSIO_UPDATE_AUTH  0xD5526CA8DACB4000
@@ -43,6 +49,8 @@
 #define EOSIO_LINK_AUTH    0x8BA7036B2D000000
 #define EOSIO_UNLINK_AUTH  0xD4E2E9C0DACB4000
 #define EOSIO_NEW_ACCOUNT  0x9AB864229A9E4000
+
+
 
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
@@ -299,7 +307,7 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    if (contractName == EOSIO) {
+    if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
             case EOSIO_DELEGATEBW:
                 parseDelegate(buffer, bufferLength, argNum, arg);
@@ -360,7 +368,7 @@ static bool isKnownAction(txProcessingContext_t *context) {
         return true;
     }
 
-    if (contractName == EOSIO) {
+    if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
             case EOSIO_DELEGATEBW:
             case EOSIO_UNDELEGATEBW:
@@ -731,7 +739,7 @@ static void processActionData(txProcessingContext_t *context) {
 
         if (context->contractActionName == EOSIO_TOKEN_TRANSFER) {
             processTokenTransfer(context);
-        } else if (context->contractName == EOSIO) {
+        } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
             switch (context->contractActionName) {
                 case EOSIO_DELEGATEBW:
                     processEosioDelegate(context);

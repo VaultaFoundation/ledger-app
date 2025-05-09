@@ -81,6 +81,7 @@ After installation, *restart* your computer for changes to take effect.
 cd ledger-app # enter directory for EOS Ledger App
 sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY="host.docker.internal:0" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
 cd /app
+python3 -m venv private_app_env --system-site-packages
 source private_app_env/bin/activate
 speculos build/nanos/bin/app.elf --model nanos
 ```
@@ -136,8 +137,8 @@ They are located in the directory `tests/functional`.
 Install the tests requirements:
 
 ```shell
+export PYTHONPATH=/app/private_app_env/lib/python3.11/site-packages
 pip install -r tests/functional/requirements.txt
-export PYTHONPATH=$PYTHONPATH:/app/private_app_env/lib/python3.9/site-packages
 pytest tests/functional/ --tb=short -v --device nanos
 ```
 
@@ -156,6 +157,9 @@ pytest tests/functional/ --tb=short -v --device nanos
 ##  Issues and Solutions
 
 #### Error Installing PyQt5
+
+Check the site libraries, the library you export should match 
+`python3 -m site`
 
 Here are the steps to get around the following error :
 ```

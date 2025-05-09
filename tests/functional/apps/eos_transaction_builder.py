@@ -150,6 +150,17 @@ class TransferAction(Action):
 
         return parameters
 
+class SwapToAction(Action):
+    def encode_action_parameters(self, data):
+        parameters = encode_name(data['from'])
+        parameters += encode_name(data['to'])
+        parameters += encode_asset(data['quantity'])
+        memo = data['memo']
+        parameters += encode_fc_uint(len(memo))
+        if len(memo) > 0:
+            parameters += pack(f'{len(memo)}s', data['memo'].encode())
+
+        return parameters
 
 class VoteProducerAction(Action):
     def encode_action_parameters(self, data):
@@ -168,7 +179,6 @@ class BuyRamAction(Action):
         parameters += encode_name(data['receiver'])
         parameters += encode_asset(data['tokens'])
         return parameters
-
 
 class BuyRamBytesAction(Action):
     def encode_action_parameters(self, data):
@@ -253,6 +263,8 @@ class UnknownAction(Action):
 def instantiate_action(name):
     if name == 'transfer':
         return TransferAction()
+    if name == 'swapto':
+        return SwapToAction()
     if name == 'voteproducer':
         return VoteProducerAction()
     if name == 'buyram':
@@ -314,7 +326,7 @@ class Transaction():
         encoder.update(pack('I', expiration))
         encoder.update(pack('H', body['ref_block_num']))
         encoder.update(pack('I', body['ref_block_prefix']))
-        encoder.update(pack('B', body['net_usage_words']))
+        encoder.update(pack('B', body['max_net_usage_words']))
         encoder.update(pack('B', body['max_cpu_usage_ms']))
         encoder.update(pack('B', body['delay_sec']))
 
