@@ -166,14 +166,14 @@ class VoteProducerAction(Action):
 
 class BuyRamAction(Action):
     def encode_action_parameters(self, data):
-        parameters = encode_name(data['buyer'])
+        parameters = encode_name(data['payer'])
         parameters += encode_name(data['receiver'])
-        parameters += encode_asset(data['tokens'])
+        parameters += encode_asset(data['quant'])
         return parameters
 
 class BuyRamBytesAction(Action):
     def encode_action_parameters(self, data):
-        parameters = encode_name(data['buyer'])
+        parameters = encode_name(data['payer'])
         parameters += encode_name(data['receiver'])
         parameters += pack('I', data['bytes'])
         return parameters

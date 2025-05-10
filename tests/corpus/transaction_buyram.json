@@ -19,9 +19,9 @@
             }
           ],
           "data": {
-            "buyer": "cryptofairy1",
+            "payer": "cryptofairy1",
             "receiver": "cryptofairy1",
-            "tokens": "1.0000 EOS"
+            "quant": "1.0000 EOS"
           }
         }
       ],

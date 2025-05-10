@@ -27,8 +27,8 @@
 #include "eos_parse_eosio.h"
 #include "eos_parse_unknown.h"
 
-#define EOSIO_TOKEN          0x5530EA033482A600
-#define CORE_VAULTA        0x46B72829076C0E24
+#define EOSIO_TOKEN        0x5530EA033482A600
+#define CORE_VAULTA        0x452EA06CDA8E4C00
 
 #define EOSIO_TOKEN_TRANSFER 0xCDCD3C2D57000000
 #define VAULTA_SWAPTO      0xC70D5CD000000000
@@ -302,13 +302,16 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
     uint32_t bufferLength = context->currentActionDataBufferLength;
     actionArgument_t *arg = &context->content->arg;
 
-    if (actionName == EOSIO_TOKEN_TRANSFER) {
+    if (actionName == EOSIO_TOKEN_TRANSFER && contractName != CORE_VAULTA) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
     }
 
     if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
+            case EOSIO_TOKEN_TRANSFER:
+                parseTokenTransfer(buffer, bufferLength, argNum, arg);
+                break;
             case EOSIO_DELEGATEBW:
                 parseDelegate(buffer, bufferLength, argNum, arg);
                 break;
@@ -345,6 +348,9 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
             case EOSIO_NEW_ACCOUNT:
                 parseNewAccount(buffer, bufferLength, argNum, arg);
                 break;
+            case VAULTA_SWAPTO:
+                parseTokenTransfer(buffer, bufferLength, argNum, arg);
+                return;
             default:
                 if (context->dataAllowed == 1) {
                     parseUnknownAction(context->dataChecksum,
@@ -364,12 +370,13 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
 static bool isKnownAction(txProcessingContext_t *context) {
     name_t contractName = context->contractName;
     name_t actionName = context->contractActionName;
-    if (actionName == EOSIO_TOKEN_TRANSFER) {
+    if (actionName == EOSIO_TOKEN_TRANSFER && contractName != CORE_VAULTA) {
         return true;
     }
 
     if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
+            case EOSIO_TOKEN_TRANSFER:
             case EOSIO_DELEGATEBW:
             case EOSIO_UNDELEGATEBW:
             case EOSIO_REFUND:
@@ -382,6 +389,7 @@ static bool isKnownAction(txProcessingContext_t *context) {
             case EOSIO_LINK_AUTH:
             case EOSIO_UNLINK_AUTH:
             case EOSIO_NEW_ACCOUNT:
+            case VAULTA_SWAPTO:
                 return true;
         }
     }
@@ -737,10 +745,13 @@ static void processActionData(txProcessingContext_t *context) {
     if (context->currentFieldPos == context->currentFieldLength) {
         context->currentActionDataBufferLength = context->currentFieldLength;
 
-        if (context->contractActionName == EOSIO_TOKEN_TRANSFER) {
+        if (context->contractActionName == EOSIO_TOKEN_TRANSFER && context->contractName != CORE_VAULTA) {
             processTokenTransfer(context);
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
             switch (context->contractActionName) {
+                case EOSIO_TOKEN_TRANSFER:
+                    processTokenTransfer(context);
+                    break;
                 case EOSIO_DELEGATEBW:
                     processEosioDelegate(context);
                     break;
@@ -774,6 +785,9 @@ static void processActionData(txProcessingContext_t *context) {
                     break;
                 case EOSIO_NEW_ACCOUNT:
                     processEosioNewAccountAction(context);
+                    break;
+                case VAULTA_SWAPTO:
+                    processTokenTransfer(context);
                     break;
                 default:
                     LEDGER_ASSERT(false, "processActionData");

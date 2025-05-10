@@ -55,7 +55,7 @@
           }
         ],
         "data": {
-          "buyer": "cryptofairy1",
+          "payer": "cryptofairy1",
           "receiver": "bobmarley",
           "bytes": 4096
         }
