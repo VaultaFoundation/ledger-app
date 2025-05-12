@@ -16,8 +16,9 @@
             "permission": "active"
         }],
         "data": {
-            "from": -1
-        }
+            "from": "zzzzzzzzzzzzj"
+        },
+        "hex_data": "FFFFFFFFFFFFFFFF"
     }],
     "transaction_extensions": [],
     "signatures": [],

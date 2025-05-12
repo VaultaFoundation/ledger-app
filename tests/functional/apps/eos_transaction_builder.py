@@ -131,8 +131,13 @@ class Action:
             encoder.update(encode_name(auth['actor']))
             encoder.update(encode_name(auth['permission']))
 
-        # pylint: disable=no-member
-        parameters = self.encode_action_parameters(data['data'])
+        parameters = bytes([0x00])
+        # if hex encoded data is already provided us that 
+        if 'hex_data' in data and data['hex_data']:
+            parameters = unhexlify(data['hex_data'])
+        else:
+            # pylint: disable=no-member
+            parameters = self.encode_action_parameters(data['data'])
         # pylint: enable=no-member
         encoder.update(encode_fc_uint(len(parameters)))
         encoder.update(parameters)
@@ -149,25 +154,6 @@ class TransferAction(Action):
             parameters += pack(f'{len(memo)}s', data['memo'].encode())
 
         return parameters
-
-# allow garbage params in to test app stability with bad transfer action        
-class WampusTransferAction(Action):
-    def encode_action_parameters(self, data):
-        required_keys = ['to', 'from', 'quantity']
-        if all(key in data for key in required_keys):
-            parameters = encode_name(data['from'])
-            parameters += encode_name(data['to'])
-            parameters += encode_asset(data['quantity'])
-            memo = data['memo']
-            parameters += encode_fc_uint(len(memo))
-            if len(memo) > 0:
-                parameters += pack(f'{len(memo)}s', data['memo'].encode())
-            return parameters
-        else: 
-            # extract values as string and join together
-            single_str = "".join(str(v) for v in data.values())
-            parameters = pack(f'{len(single_str)}s', single_str.encode())
-            return parameters
         
 class SwapToAction(TransferAction):
     pass
@@ -270,9 +256,7 @@ class UnknownAction(Action):
         return parameters
 
 
-def instantiate_action(name, contract = None):
-    if name == 'transfer' and contract == 'wampus.token':
-        return WampusTransferAction()
+def instantiate_action(name):
     if name == 'transfer':
         return TransferAction()
     if name == 'swapto':
@@ -346,7 +330,7 @@ class Transaction():
         encoder.update(pack('B', len(body['actions'])))
 
         for action in body['actions']:
-            act = instantiate_action(action["name"],action["account"])
+            act = instantiate_action(action["name"])
             act.encode(action, encoder)
 
         encoder.update(pack('B', len(body['transaction_extensions'])))

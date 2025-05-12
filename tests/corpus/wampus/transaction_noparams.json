@@ -15,7 +15,8 @@
             "actor": "alicetest123",
             "permission": "active"
         }],
-        "data": {}
+        "data": {},
+        "hex_data": "00"
     }],
     "transaction_extensions": [],
     "signatures": [],

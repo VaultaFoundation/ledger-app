@@ -9,7 +9,7 @@ from ragger.backend import BackendInterface
 from ragger.firmware import Firmware
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 
-from apps.eos import EosClient, ErrorType, MAX_CHUNK_SIZE
+from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
 from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR, TAGGED_CORPUS_FILES
 # Proposed EOS derivation paths for tests ###
@@ -47,14 +47,25 @@ def test_sign_transaction_accepted(test_name: str,
 
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
+    
     if firmware.is_nano:
         end_text = "^Sign$"
     else:
         end_text = "^Hold to sign$"
-    with client.send_async_sign_message(VAULTA_PATH, message):
-        scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
-    response = client.get_async_response().data
-    client.verify_signature(VAULTA_PATH, signing_digest, response)
+    try:
+        with client.send_async_sign_message(VAULTA_PATH, message):
+            scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
+    except OSError as e:
+        # these bad transactions we expect a crash 
+        if subdir == 'wampus' and (
+                transaction_filename == 'transaction_badparam.json' or
+                transaction_filename == 'transaction_noparams.json'
+            ):
+            return
+        assert False
+    rapdu = client.get_async_response()
+    assert rapdu.status == STATUS_OK
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
@@ -127,10 +138,6 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
                                        instructions)
     response = client.get_async_response().data
     client.verify_signature(VAULTA_PATH, signing_digest, response)
-
-
-# This is a transfer action by a different contract with no parameter values
-# Test to make sure the app can handle these tests 
 
 
 # This transaction contains multiples actions which doesn't fit in one APDU.
