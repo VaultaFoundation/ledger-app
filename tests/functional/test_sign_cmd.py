@@ -31,6 +31,8 @@ def load_transaction_from_file(transaction_filename, subdir=None):
 # corner case transaction that are handled separately
 transactions = [item for item in list(TAGGED_CORPUS_FILES) if item[0] is not None]
 
+refused_trans = [('eosio','transaction_eosiotoken.json'),('vaulta','transaction_transferA.json')]
+
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out paramaterized tests accepts a list of tuples 
 
@@ -55,17 +57,22 @@ def test_sign_transaction_accepted(test_name: str,
     client.verify_signature(VAULTA_PATH, signing_digest, response)
 
 
+@pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
 def test_sign_transaction_refused(test_name: str,
                                   firmware: Firmware,
                                   backend: BackendInterface,
-                                  scenario_navigator: NavigateWithScenario):
-    _, message = load_transaction_from_file("transaction.json")
+                                  scenario_navigator: NavigateWithScenario,
+                                  subdir: str,
+                                  transaction_filename: str):
+                                      
+    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
+    _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
     backend.raise_policy = RaisePolicy.RAISE_NOTHING
     if firmware.is_nano:
         end_text = "^Cancel$"
         with client.send_async_sign_message(VAULTA_PATH, message):
-            scenario_navigator.review_reject(test_name=test_name, custom_screen_text=end_text)
+            scenario_navigator.review_reject(test_name=folder_name, custom_screen_text=end_text)
         rapdu = client.get_async_response()
         assert rapdu.status == ErrorType.USER_CANCEL
         assert len(rapdu.data) == 0
@@ -120,6 +127,10 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
                                        instructions)
     response = client.get_async_response().data
     client.verify_signature(VAULTA_PATH, signing_digest, response)
+
+
+# This is a transfer action by a different contract with no parameter values
+# Test to make sure the app can handle these tests 
 
 
 # This transaction contains multiples actions which doesn't fit in one APDU.

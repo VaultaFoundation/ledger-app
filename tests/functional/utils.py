@@ -9,13 +9,15 @@ ROOT_SCREENSHOT_PATH = Path(__file__).parent.resolve()
 CORPUS_DIR = Path(__file__).parent.parent / "corpus"
 eosio_corpus_dir = CORPUS_DIR / "eosio"
 vaulta_corpus_dir = CORPUS_DIR / "vaulta"
+wampus_corpus_dir = CORPUS_DIR / "wampus"
 
 # List files in both directories
 eosio_tagged_corupus_files = tag_files("eosio", eosio_corpus_dir)
-vaulta_tagged_corupus_files = tag_files("vaulta", vaulta_corpus_dir)
+vaulta_tagged_corpus_files = tag_files("vaulta", vaulta_corpus_dir)
+wampus_tagged_corpus_files = tag_files("wampus", wampus_corpus_dir)
 
 # Get all .json files in the directory (non-recursive)
 # note need saftey check when extracting, as first element is undefined 
 untagged_corpus_files = [(None, filename) for filename in list(CORPUS_DIR.glob("*.json"))]
 
-TAGGED_CORPUS_FILES = eosio_tagged_corupus_files + vaulta_tagged_corupus_files + untagged_corpus_files
+TAGGED_CORPUS_FILES = eosio_tagged_corupus_files + vaulta_tagged_corpus_files + wampus_tagged_corpus_files + untagged_corpus_files

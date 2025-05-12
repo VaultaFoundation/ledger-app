@@ -116,8 +116,11 @@ bash-5.1$ make scan-build
 ### Loading on a physical device
 
 This step will vary slightly depending on your platform.
-
 > Your physical device must be connected, unlocked and the screen showing the dashboard (not inside an application).
+
+1) Download Ledger Live 
+2) [Unlock developer mode and enable developer tools](https://developers.ledger.com/docs/ledger-live/discover/references/developer-mode)
+3) Create a [manifest file](https://developers.ledger.com/docs/ledger-live/discover/references/manifest) for your app 
 
 ####  `Linux`
 First make sure you have the proper udev rules added on your host.
