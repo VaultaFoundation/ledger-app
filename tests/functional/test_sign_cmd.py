@@ -27,11 +27,20 @@ def load_transaction_from_file(transaction_filename, subdir=None):
         
     return Transaction().encode(obj)
 
-# Remove files with no tag
+# Remove files with no tag and pull out refused trx
 # corner case transaction that are handled separately
-transactions = [item for item in list(TAGGED_CORPUS_FILES) if item[0] is not None]
+transactions = [
+    item for item in list(TAGGED_CORPUS_FILES) 
+    if item[0] is not None 
+        and item[1] != 'transaction_refused.json'
+        and item[1] != 'transaction_badparam.json'
+        and item[1] != 'transaction_noparams.json'
+]
 
-refused_trans = [('eosio','transaction_eosiotoken.json'),('vaulta','transaction_transferA.json')]
+refused_trans = [('eosio','transaction_refused.json'),('vaulta','transaction_refused.json')]
+unknown_trans = [(None,'transaction_unknown.json'),
+                ('wampus','transaction_badparam.json'),
+                ('wampus','transaction_noparams.json')]
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out paramaterized tests accepts a list of tuples 
@@ -52,21 +61,11 @@ def test_sign_transaction_accepted(test_name: str,
         end_text = "^Sign$"
     else:
         end_text = "^Hold to sign$"
-    try:
-        with client.send_async_sign_message(VAULTA_PATH, message):
-            scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
-    except OSError as e:
-        # these bad transactions we expect a crash 
-        if subdir == 'wampus' and (
-                transaction_filename == 'transaction_badparam.json' or
-                transaction_filename == 'transaction_noparams.json'
-            ):
-            return
-        assert False
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
-
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
 def test_sign_transaction_refused(test_name: str,
@@ -145,8 +144,14 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
 # fully contained in the first APDU before answering to it.
 # Therefore we can't use the simple send_async_sign_message() method and we
 # need to do thing more manually.
-def test_sign_transaction_unknown_fail(test_name, firmware, backend, navigator):
-    _, message = load_transaction_from_file("transaction_unknown.json")
+@pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
+def test_sign_transaction_unknown_fail(test_name,
+                                    firmware,
+                                    backend, 
+                                    navigator,
+                                    subdir,
+                                    transaction_filename):
+    _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
     payload = pack_derivation_path(VAULTA_PATH) + message
     messages = split_message(payload, MAX_CHUNK_SIZE)
