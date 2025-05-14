@@ -17,7 +17,7 @@ vaulta_tagged_corpus_files = tag_files("vaulta", vaulta_corpus_dir)
 wampus_tagged_corpus_files = tag_files("wampus", wampus_corpus_dir)
 
 # Get all .json files in the directory (non-recursive)
-# note need safety check when extracting, as first element is undefined 
+# note need safety check when extracting, as first element is undefined
 untagged_corpus_files = [(None, filename) for filename in list(CORPUS_DIR.glob("*.json"))]
 
 TAGGED_CORPUS_FILES = eosio_tagged_corupus_files + vaulta_tagged_corpus_files + wampus_tagged_corpus_files + untagged_corpus_files

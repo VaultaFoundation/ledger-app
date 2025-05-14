@@ -24,14 +24,14 @@ def load_transaction_from_file(transaction_filename, subdir=None):
 
     with transaction_file_path.open("r", encoding="utf-8") as f:
         obj = load(f)
-        
+
     return Transaction().encode(obj)
 
 # Remove files with no tag and pull out refused trx
 # corner case transaction that are handled separately
 transactions = [
-    item for item in list(TAGGED_CORPUS_FILES) 
-    if item[0] is not None 
+    item for item in list(TAGGED_CORPUS_FILES)
+    if item[0] is not None
         and item[1] != 'transaction_refused.json'
         and item[1] != 'transaction_badparam.json'
         and item[1] != 'transaction_noparams.json'
@@ -43,9 +43,10 @@ unknown_trans = [(None,'transaction_unknown.json'),
                 ('wampus','transaction_noparams.json')]
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
-# out parameterized tests accepts a list of tuples 
+# out parameterized tests accepts a list of tuples
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
+# pylint: disable=too-many-positional-args
 def test_sign_transaction_accepted(test_name: str,
                                    firmware: Firmware,
                                    backend: BackendInterface,
@@ -56,7 +57,7 @@ def test_sign_transaction_accepted(test_name: str,
 
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
-    
+
     if firmware.is_nano:
         end_text = "^Sign$"
     else:
@@ -68,13 +69,14 @@ def test_sign_transaction_accepted(test_name: str,
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
+# pylint: disable=too-many-positional-args
 def test_sign_transaction_refused(test_name: str,
                                   firmware: Firmware,
                                   backend: BackendInterface,
                                   scenario_navigator: NavigateWithScenario,
                                   subdir: str,
                                   transaction_filename: str):
-                                      
+
     folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
     _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
@@ -145,13 +147,14 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
 # Therefore we can't use the simple send_async_sign_message() method and we
 # need to do thing more manually.
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
+# pylint: disable=too-many-positional-args
 def test_sign_transaction_unknown_fail(test_name,
                                     firmware,
-                                    backend, 
+                                    backend,
                                     navigator,
                                     subdir,
                                     transaction_filename):
-    
+
     folder_name = test_name + "/" + transaction_filename.replace(".json", "")
     if subdir:
         folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
