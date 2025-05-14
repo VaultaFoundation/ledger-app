@@ -46,7 +46,6 @@ unknown_trans = [(None,'transaction_unknown.json'),
 # out parameterized tests accepts a list of tuples
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
-# pylint: disable=too-many-arguments
 def test_sign_transaction_accepted(test_name: str,
                                    firmware: Firmware,
                                    backend: BackendInterface,
@@ -69,7 +68,6 @@ def test_sign_transaction_accepted(test_name: str,
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
-# pylint: disable=too-many-arguments
 def test_sign_transaction_refused(test_name: str,
                                   firmware: Firmware,
                                   backend: BackendInterface,
@@ -147,7 +145,6 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
 # Therefore we can't use the simple send_async_sign_message() method and we
 # need to do thing more manually.
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
-# pylint: disable=too-many-arguments
 def test_sign_transaction_unknown_fail(test_name,
                                     firmware,
                                     backend,
