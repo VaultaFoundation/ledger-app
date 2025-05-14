@@ -131,8 +131,8 @@ class Action:
             encoder.update(encode_name(auth['actor']))
             encoder.update(encode_name(auth['permission']))
 
-        parameters = bytes([0x00])
-        # if hex encoded data is already provided us that 
+        # if hex encoded data is already provided use that
+        # otherwise create hex code from the provided JSON 
         if 'hex_data' in data and data['hex_data']:
             parameters = unhexlify(data['hex_data'])
         else:

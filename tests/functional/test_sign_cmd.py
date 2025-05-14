@@ -43,7 +43,7 @@ unknown_trans = [(None,'transaction_unknown.json'),
                 ('wampus','transaction_noparams.json')]
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
-# out paramaterized tests accepts a list of tuples 
+# out parameterized tests accepts a list of tuples 
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
 def test_sign_transaction_accepted(test_name: str,
