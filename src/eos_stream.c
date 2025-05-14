@@ -27,28 +27,28 @@
 #include "eos_parse_eosio.h"
 #include "eos_parse_unknown.h"
 
-#define EOSIO_TOKEN        0x5530EA033482A600
+
+/* CONTRACT OWNERS */
 #define CORE_VAULTA        0x452EA06CDA8E4C00
-
-#define EOSIO_TOKEN_TRANSFER 0xCDCD3C2D57000000
-#define VAULTA_SWAPTO      0xC70D5CD000000000
-
 #define EOSIO              0x5530EA0000000000
 
+/* ACTIONS */
+#define TOKEN_TRANSFER_ACTION 0xCDCD3C2D57000000
+#define VAULTA_SWAPTO_ACTION  0xC70D5CD000000000
 
-#define EOSIO_DELEGATEBW   0x4AA2A61B2A3F0000
-#define EOSIO_UNDELEGATEBW 0xD4D2A8A986CA8FC0
-#define EOSIO_VOTEPRODUCER 0xDD32AADE89D21570
-#define EOSIO_BUYRAM       0x3EBD734800000000
+#define DELEGATEBW_ACTION   0x4AA2A61B2A3F0000
+#define UNDELEGATEBW_ACTION 0xD4D2A8A986CA8FC0
+#define VOTEPRODUCER_ACTION 0xDD32AADE89D21570
+#define BUYRAM_ACTION       0x3EBD734800000000
 
-#define EOSIO_BUYRAMBYTES  0x3EBD7348FECAB000
-#define EOSIO_SELLRAM      0xC2A31B9A40000000
-#define EOSIO_UPDATE_AUTH  0xD5526CA8DACB4000
-#define EOSIO_DELETE_AUTH  0x4AA2ACA8DACB4000
-#define EOSIO_REFUND       0xBA97A9A400000000
-#define EOSIO_LINK_AUTH    0x8BA7036B2D000000
-#define EOSIO_UNLINK_AUTH  0xD4E2E9C0DACB4000
-#define EOSIO_NEW_ACCOUNT  0x9AB864229A9E4000
+#define BUYRAM_ACTIONBYTES  0x3EBD7348FECAB000
+#define SELLRAM_ACTION      0xC2A31B9A40000000
+#define UPDATE_AUTH_ACTION  0xD5526CA8DACB4000
+#define DELETE_AUTH_ACTION  0x4AA2ACA8DACB4000
+#define REFUND_ACTION       0xBA97A9A400000000
+#define LINK_AUTH_ACTION    0x8BA7036B2D000000
+#define UNLINK_AUTH_ACTION  0xD4E2E9C0DACB4000
+#define NEW_ACCOUNT_ACTION  0x9AB864229A9E4000
 
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
@@ -300,52 +300,52 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
     uint32_t bufferLength = context->currentActionDataBufferLength;
     actionArgument_t *arg = &context->content->arg;
 
-    if (actionName == VAULTA_SWAPTO && contractName == CORE_VAULTA) {
+    if (actionName == VAULTA_SWAPTO_ACTION && contractName == CORE_VAULTA) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
     }
     
-    if (actionName == EOSIO_TOKEN_TRANSFER) {
+    if (actionName == TOKEN_TRANSFER_ACTION) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
     }
 
     if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
-            case EOSIO_DELEGATEBW:
+            case DELEGATEBW_ACTION:
                 parseDelegate(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_UNDELEGATEBW:
+            case UNDELEGATEBW_ACTION:
                 parseUndelegate(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_REFUND:
+            case REFUND_ACTION:
                 parseRefund(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_BUYRAM:
+            case BUYRAM_ACTION:
                 parseBuyRam(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_BUYRAMBYTES:
+            case BUYRAM_ACTIONBYTES:
                 parseBuyRamBytes(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_SELLRAM:
+            case SELLRAM_ACTION:
                 parseSellRam(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_VOTEPRODUCER:
+            case VOTEPRODUCER_ACTION:
                 parseVoteProducer(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_UPDATE_AUTH:
+            case UPDATE_AUTH_ACTION:
                 parseUpdateAuth(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_DELETE_AUTH:
+            case DELETE_AUTH_ACTION:
                 parseDeleteAuth(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_LINK_AUTH:
+            case LINK_AUTH_ACTION:
                 parseLinkAuth(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_UNLINK_AUTH:
+            case UNLINK_AUTH_ACTION:
                 parseUnlinkAuth(buffer, bufferLength, argNum, arg);
                 break;
-            case EOSIO_NEW_ACCOUNT:
+            case NEW_ACCOUNT_ACTION:
                 parseNewAccount(buffer, bufferLength, argNum, arg);
                 break;
             default:
@@ -368,29 +368,29 @@ static bool isKnownAction(txProcessingContext_t *context) {
     name_t contractName = context->contractName;
     name_t actionName = context->contractActionName;
     
-    if (actionName == VAULTA_SWAPTO && contractName == CORE_VAULTA) {
+    if (actionName == VAULTA_SWAPTO_ACTION && contractName == CORE_VAULTA) {
         return true;
     }
     
-    if (actionName == EOSIO_TOKEN_TRANSFER 
+    if (actionName == TOKEN_TRANSFER_ACTION 
         && isTransferDataValid(context->currentFieldLength)) {
         return true;
     }
 
     if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
-            case EOSIO_DELEGATEBW:
-            case EOSIO_UNDELEGATEBW:
-            case EOSIO_REFUND:
-            case EOSIO_BUYRAM:
-            case EOSIO_BUYRAMBYTES:
-            case EOSIO_SELLRAM:
-            case EOSIO_VOTEPRODUCER:
-            case EOSIO_UPDATE_AUTH:
-            case EOSIO_DELETE_AUTH:
-            case EOSIO_LINK_AUTH:
-            case EOSIO_UNLINK_AUTH:
-            case EOSIO_NEW_ACCOUNT:
+            case DELEGATEBW_ACTION:
+            case UNDELEGATEBW_ACTION:
+            case REFUND_ACTION:
+            case BUYRAM_ACTION:
+            case BUYRAM_ACTIONBYTES:
+            case SELLRAM_ACTION:
+            case VOTEPRODUCER_ACTION:
+            case UPDATE_AUTH_ACTION:
+            case DELETE_AUTH_ACTION:
+            case LINK_AUTH_ACTION:
+            case UNLINK_AUTH_ACTION:
+            case NEW_ACCOUNT_ACTION:
                 return true;
         }
     }
@@ -746,47 +746,47 @@ static void processActionData(txProcessingContext_t *context) {
     if (context->currentFieldPos == context->currentFieldLength) {
         context->currentActionDataBufferLength = context->currentFieldLength;
 
-        if (context->contractActionName == VAULTA_SWAPTO
+        if (context->contractActionName == VAULTA_SWAPTO_ACTION
             && context->contractName == CORE_VAULTA) {
             processTokenTransfer(context);
             
-        } else if (context->contractActionName == EOSIO_TOKEN_TRANSFER) {
+        } else if (context->contractActionName == TOKEN_TRANSFER_ACTION) {
             processTokenTransfer(context);  
              
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
             switch (context->contractActionName) {
-                case EOSIO_DELEGATEBW:
+                case DELEGATEBW_ACTION:
                     processEosioDelegate(context);
                     break;
-                case EOSIO_UNDELEGATEBW:
+                case UNDELEGATEBW_ACTION:
                     processEosioUndelegate(context);
                     break;
-                case EOSIO_REFUND:
+                case REFUND_ACTION:
                     processEosioRefund(context);
                     break;
-                case EOSIO_VOTEPRODUCER:
+                case VOTEPRODUCER_ACTION:
                     processEosioVoteProducer(context);
                     break;
-                case EOSIO_BUYRAM:
-                case EOSIO_BUYRAMBYTES:
+                case BUYRAM_ACTION:
+                case BUYRAM_ACTIONBYTES:
                     processEosioBuyRam(context);
                     break;
-                case EOSIO_SELLRAM:
+                case SELLRAM_ACTION:
                     processEosioSellRam(context);
                     break;
-                case EOSIO_UPDATE_AUTH:
+                case UPDATE_AUTH_ACTION:
                     processEosioUpdateAuth(context);
                     break;
-                case EOSIO_DELETE_AUTH:
+                case DELETE_AUTH_ACTION:
                     processEosioDeleteAuth(context);
                     break;
-                case EOSIO_LINK_AUTH:
+                case LINK_AUTH_ACTION:
                     processEosioLinkAuth(context);
                     break;
-                case EOSIO_UNLINK_AUTH:
+                case UNLINK_AUTH_ACTION:
                     processEosioUnlinkAuth(context);
                     break;
-                case EOSIO_NEW_ACCOUNT:
+                case NEW_ACCOUNT_ACTION:
                     processEosioNewAccountAction(context);
                     break;
                 default:

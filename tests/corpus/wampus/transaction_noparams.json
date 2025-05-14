@@ -8,7 +8,8 @@
     "max_cpu_usage_ms": 0,
     "delay_sec": 0,
     "context_free_actions": [],
-    "actions": [{
+    "actions": [
+      {
         "account": "wampus.token",
         "name": "transfer",
         "authorization": [{
@@ -17,7 +18,18 @@
         }],
         "data": {},
         "hex_data": "00"
-    }],
+      },
+      {
+        "account": "wampus.token",
+        "name": "transfer",
+        "authorization": [{
+            "actor": "alicetest123",
+            "permission": "active"
+        }],
+        "data": {},
+        "hex_data": "00"
+      }
+    ],
     "transaction_extensions": [],
     "signatures": [],
     "context_free_data": []

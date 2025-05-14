@@ -89,7 +89,7 @@ def test_sign_transaction_refused(test_name: str,
     else:
         for i in range(4):
             with client.send_async_sign_message(VAULTA_PATH, message):
-                scenario_navigator.review_reject(test_name=test_name + f"/part{i}")
+                scenario_navigator.review_reject(test_name=folder_name + f"/part{i}")
             rapdu = client.get_async_response()
             assert rapdu.status == ErrorType.USER_CANCEL
             assert len(rapdu.data) == 0
@@ -151,6 +151,10 @@ def test_sign_transaction_unknown_fail(test_name,
                                     navigator,
                                     subdir,
                                     transaction_filename):
+    
+    folder_name = test_name + "/" + transaction_filename.replace(".json", "")
+    if subdir:
+        folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
     _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
     payload = pack_derivation_path(VAULTA_PATH) + message
@@ -163,7 +167,7 @@ def test_sign_transaction_unknown_fail(test_name,
     with client.send_async_sign_message_full(messages[0], True):
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
-                                       test_name,
+                                       folder_name,
                                        instructions)
     rapdu = client.get_async_response()
     assert rapdu.status == 0x6A80
