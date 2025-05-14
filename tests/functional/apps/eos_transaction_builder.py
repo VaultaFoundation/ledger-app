@@ -132,7 +132,7 @@ class Action:
             encoder.update(encode_name(auth['permission']))
 
         # if hex encoded data is already provided use that
-        # otherwise create hex code from the provided JSON 
+        # otherwise create hex code from the provided JSON
         if 'hex_data' in data and data['hex_data']:
             parameters = unhexlify(data['hex_data'])
         else:
@@ -154,7 +154,7 @@ class TransferAction(Action):
             parameters += pack(f'{len(memo)}s', data['memo'].encode())
 
         return parameters
-        
+
 class SwapToAction(TransferAction):
     pass
 
