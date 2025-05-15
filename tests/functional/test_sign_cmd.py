@@ -35,12 +35,14 @@ transactions = [
         and item[1] != 'transaction_refused.json'
         and item[1] != 'transaction_badparam.json'
         and item[1] != 'transaction_noparams.json'
+        and item[1] != 'transaction_nomemo.json'
 ]
 
 refused_trans = [('eosio','transaction_refused.json'),('vaulta','transaction_refused.json')]
 unknown_trans = [(None,'transaction_unknown.json'),
                 ('wampus','transaction_badparam.json'),
-                ('wampus','transaction_noparams.json')]
+                ('wampus','transaction_noparams.json'),
+                ('wampus','transaction_nomemo.json')]
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out parameterized tests accepts a list of tuples
