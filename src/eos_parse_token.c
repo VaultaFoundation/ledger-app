@@ -45,9 +45,9 @@ void parseTokenTransfer(uint8_t *buffer,
 
 /*
  *
- * Must have to: from: quantity: and memo: fields 
- * 3 sizeof(name_t) for to: from: memo: 
- * 1 sizeof(asset_t) for quantity:  
+ * Must have to: from: quantity: and memo: fields
+ * 3 sizeof(name_t) for to: from: memo:
+ * 1 sizeof(asset_t) for quantity:
  *
  */
 bool isTransferDataValid(uint32_t actionDataBufferLength) {

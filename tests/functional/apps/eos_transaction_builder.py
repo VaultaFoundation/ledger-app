@@ -120,7 +120,7 @@ def encode_auth(data):
         parameters += pack('H', wait['weight'])
     return parameters
 
-
+# pylint: disable=no-member
 class Action:
     def encode(self, data, encoder):
         encoder.update(encode_name(data['account']))
@@ -136,9 +136,7 @@ class Action:
         if 'hex_data' in data and data['hex_data']:
             parameters = unhexlify(data['hex_data'])
         else:
-            # pylint: disable=no-member
             parameters = self.encode_action_parameters(data['data'])
-        # pylint: enable=no-member
         encoder.update(encode_fc_uint(len(parameters)))
         encoder.update(parameters)
 
