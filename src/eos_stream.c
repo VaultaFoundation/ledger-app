@@ -304,8 +304,7 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    if (actionName == TOKEN_TRANSFER_ACTION 
-        && isTransferDataValid(bufferLength)) {
+    if (actionName == TOKEN_TRANSFER_ACTION && isTransferDataValid(bufferLength)) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
     }
