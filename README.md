@@ -42,7 +42,7 @@ bash-5.1$ cd /app
 bash-5.1$ BOLOS_SDK=$NANOSP_SDK make
 ```
 
-5) Setup Ledger Blue - required python virtual environment, needed for testing and side loading app onto device
+5) Setup Ledger Build Env - required python virtual environment, needed for testing and side loading app onto device
 
 ```shell
 cd /app
