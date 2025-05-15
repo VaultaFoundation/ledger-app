@@ -23,7 +23,7 @@ include $(BOLOS_SDK)/Makefile.defines
 ########################################
 #        Mandatory configuration       #
 ########################################
-APPNAME = Eos
+APPNAME = Vaulta
 
 APPVERSION_M=1
 APPVERSION_N=6
