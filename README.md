@@ -39,7 +39,7 @@ git checkout develop
 ```shell
 docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 bash-5.1$ cd /app
-bash-5.1$ BOLOS_SDK=$NANOS_SDK make
+bash-5.1$ BOLOS_SDK=$NANOSP_SDK make
 ```
 
 5) Setup Ledger Blue - required python virtual environment, needed for testing and side loading app onto device
@@ -61,7 +61,7 @@ cd ledger-app # enter directory for EOS Ledger App
 sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY=$DISPLAY ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
 cd /app
 source private_app_env/bin/activate
-speculos build/nanos/bin/app.elf --model nanos
+speculos build/nanosp/bin/app.elf --model nanosp
 ```
 
 ###  `MacOS`
@@ -83,7 +83,7 @@ sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.
 cd /app
 python3 -m venv private_app_env --system-site-packages
 source private_app_env/bin/activate
-speculos build/nanos/bin/app.elf --model nanos
+speculos build/nanosp/bin/app.elf --model nanosp
 ```
 
 ## Compilation Options
@@ -97,7 +97,6 @@ bash-5.1$ make DEBUG=1  # compile optionally with PRINTF
 
 You can choose which device to compile and load for by setting the `BOLOS_SDK` environment variable to the following values:
 
-- `BOLOS_SDK=$NANOS_SDK`
 - `BOLOS_SDK=$NANOX_SDK`
 - `BOLOS_SDK=$NANOSP_SDK`
 - `BOLOS_SDK=$STAX_SDK`
@@ -142,19 +141,19 @@ Install the tests requirements:
 ```shell
 export PYTHONPATH=/app/private_app_env/lib/python3.11/site-packages
 pip install -r tests/functional/requirements.txt
-pytest tests/functional/ --tb=short -v --device nanos
+pytest tests/functional/ --tb=short -v --device nanosp
 ```
 
 You can run emulated tests for a specific device or for all devices. Set `--device` to `all` for all devices.
 Use `--display` to see the emulated UI as the tests are run. The default mode runs the emulator in headless mode.
 
 ```shell
-pytest tests/functional/ -v --tb=short --device=nanos --display
+pytest tests/functional/ -v --tb=short --device=nanosp --display
 ```
 
-This is a run in headless mode for `nanos`
+This is a run in headless mode for `nanosp`
 ```shell
-pytest tests/functional/ --tb=short -v --device nanos
+pytest tests/functional/ --tb=short -v --device nanosp
 ```
 
 ##  Issues and Solutions
