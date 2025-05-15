@@ -27,10 +27,9 @@
 #include "eos_parse_eosio.h"
 #include "eos_parse_unknown.h"
 
-
 /* CONTRACT OWNERS */
-#define CORE_VAULTA        0x452EA06CDA8E4C00
-#define EOSIO              0x5530EA0000000000
+#define CORE_VAULTA 0x452EA06CDA8E4C00
+#define EOSIO       0x5530EA0000000000
 
 /* ACTIONS */
 #define TOKEN_TRANSFER_ACTION 0xCDCD3C2D57000000
@@ -41,14 +40,14 @@
 #define VOTEPRODUCER_ACTION 0xDD32AADE89D21570
 #define BUYRAM_ACTION       0x3EBD734800000000
 
-#define BUYRAM_ACTIONBYTES  0x3EBD7348FECAB000
-#define SELLRAM_ACTION      0xC2A31B9A40000000
-#define UPDATE_AUTH_ACTION  0xD5526CA8DACB4000
-#define DELETE_AUTH_ACTION  0x4AA2ACA8DACB4000
-#define REFUND_ACTION       0xBA97A9A400000000
-#define LINK_AUTH_ACTION    0x8BA7036B2D000000
-#define UNLINK_AUTH_ACTION  0xD4E2E9C0DACB4000
-#define NEW_ACCOUNT_ACTION  0x9AB864229A9E4000
+#define BUYRAM_ACTIONBYTES 0x3EBD7348FECAB000
+#define SELLRAM_ACTION     0xC2A31B9A40000000
+#define UPDATE_AUTH_ACTION 0xD5526CA8DACB4000
+#define DELETE_AUTH_ACTION 0x4AA2ACA8DACB4000
+#define REFUND_ACTION      0xBA97A9A400000000
+#define LINK_AUTH_ACTION   0x8BA7036B2D000000
+#define UNLINK_AUTH_ACTION 0xD4E2E9C0DACB4000
+#define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
@@ -304,7 +303,7 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
     }
-    
+
     if (actionName == TOKEN_TRANSFER_ACTION) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
@@ -367,13 +366,12 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
 static bool isKnownAction(txProcessingContext_t *context) {
     name_t contractName = context->contractName;
     name_t actionName = context->contractActionName;
-    
+
     if (actionName == VAULTA_SWAPTO_ACTION && contractName == CORE_VAULTA) {
         return true;
     }
-    
-    if (actionName == TOKEN_TRANSFER_ACTION 
-        && isTransferDataValid(context->currentFieldLength)) {
+
+    if (actionName == TOKEN_TRANSFER_ACTION && isTransferDataValid(context->currentFieldLength)) {
         return true;
     }
 
@@ -746,13 +744,13 @@ static void processActionData(txProcessingContext_t *context) {
     if (context->currentFieldPos == context->currentFieldLength) {
         context->currentActionDataBufferLength = context->currentFieldLength;
 
-        if (context->contractActionName == VAULTA_SWAPTO_ACTION
-            && context->contractName == CORE_VAULTA) {
+        if (context->contractActionName == VAULTA_SWAPTO_ACTION &&
+            context->contractName == CORE_VAULTA) {
             processTokenTransfer(context);
-            
+
         } else if (context->contractActionName == TOKEN_TRANSFER_ACTION) {
-            processTokenTransfer(context);  
-             
+            processTokenTransfer(context);
+
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
             switch (context->contractActionName) {
                 case DELEGATEBW_ACTION:
