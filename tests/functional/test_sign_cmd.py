@@ -1,12 +1,12 @@
 from json import load
 import pytest
 
+from ledgered.devices import Device, DeviceType
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
 from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
-from ledgered.devices import Device, DeviceType
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
