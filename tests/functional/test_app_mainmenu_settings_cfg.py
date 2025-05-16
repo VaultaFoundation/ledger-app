@@ -40,7 +40,7 @@ def _verify_version(version: str) -> None:
     assert version == vers_str
 
 
-def test_app_mainmenu_settings_cfg(firmware, backend, navigator, test_name):
+def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name):
     client = EosClient(backend)
 
     # Get appversion and "data_allowed parameter"
@@ -56,7 +56,7 @@ def test_app_mainmenu_settings_cfg(firmware, backend, navigator, test_name):
     if isinstance(backend, SpeculosBackend):
         # Navigate in the main menu and the setting menu
         # Change the "data_allowed parameter" value
-        if firmware.device.startswith("nano"):
+        if device.is_nano:
             instructions = [
                 NavInsID.RIGHT_CLICK,
                 NavInsID.RIGHT_CLICK,

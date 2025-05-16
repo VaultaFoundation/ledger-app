@@ -15,6 +15,7 @@
  *  limitations under the License.
  ********************************************************************************/
 
+#include "os.h"
 #include "eos_parse_token.h"
 #include "eos_types.h"
 
@@ -40,4 +41,16 @@ void parseTokenTransfer(uint8_t *buffer,
         bufferLength -= 2 * sizeof(name_t) + sizeof(asset_t);
         parseStringField(buffer, bufferLength, "Memo", arg, &read, &written);
     }
+}
+
+/*
+ *
+ * Must have to: from: quantity: and memo: fields
+ * 2 sizeof(name_t) for to: from:
+ * 1 sizeof(asset_t) for quantity:
+ * smallest memo is single byte of 0x00
+ *
+ */
+bool isTransferDataValid(uint32_t actionDataBufferLength) {
+    return actionDataBufferLength >= 2 * sizeof(name_t) + sizeof(asset_t) + 1;
 }

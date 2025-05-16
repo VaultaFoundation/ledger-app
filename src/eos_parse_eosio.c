@@ -82,7 +82,7 @@ void parseBuyRam(uint8_t *buffer, uint32_t bufferLength, uint8_t argNum, actionA
     uint32_t written = 0;
 
     if (argNum == 0) {
-        parseNameField(buffer, bufferLength, "Buyer", arg, &read, &written);
+        parseNameField(buffer, bufferLength, "Payer", arg, &read, &written);
     } else if (argNum == 1) {
         buffer += sizeof(name_t);
         bufferLength -= sizeof(name_t);
@@ -90,7 +90,7 @@ void parseBuyRam(uint8_t *buffer, uint32_t bufferLength, uint8_t argNum, actionA
     } else if (argNum == 2) {
         buffer += 2 * sizeof(name_t);
         bufferLength -= 2 * sizeof(name_t);
-        parseAssetField(buffer, bufferLength, "Tokens", arg, &read, &written);
+        parseAssetField(buffer, bufferLength, "Quant", arg, &read, &written);
     }
 }
 
@@ -102,7 +102,7 @@ void parseBuyRamBytes(uint8_t *buffer,
     uint32_t written = 0;
 
     if (argNum == 0) {
-        parseNameField(buffer, bufferLength, "Buyer", arg, &read, &written);
+        parseNameField(buffer, bufferLength, "Payer", arg, &read, &written);
     } else if (argNum == 1) {
         buffer += sizeof(name_t);
         bufferLength -= sizeof(name_t);

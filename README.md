@@ -39,10 +39,10 @@ git checkout develop
 ```shell
 docker run --rm -ti -v "$(realpath .):/app" --user $(id -u $USER):$(id -g $USER) ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 bash-5.1$ cd /app
-bash-5.1$ BOLOS_SDK=$NANOS_SDK make
+bash-5.1$ BOLOS_SDK=$NANOSP_SDK make
 ```
 
-5) Setup Ledger Blue - required python virtual environment, needed for testing and side loading app onto device
+5) Setup Ledger Build Env - required python virtual environment, needed for testing and side loading app onto device
 
 ```shell
 cd /app
@@ -61,7 +61,7 @@ cd ledger-app # enter directory for EOS Ledger App
 sudo docker run --rm -ti -v "$(realpath .):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY=$DISPLAY ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
 cd /app
 source private_app_env/bin/activate
-speculos build/nanos/bin/app.elf --model nanos
+speculos build/nanosp/bin/app.elf --model nanosp
 ```
 
 ###  `MacOS`
@@ -81,8 +81,9 @@ After installation, *restart* your computer for changes to take effect.
 cd ledger-app # enter directory for EOS Ledger App
 sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY="host.docker.internal:0" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-dev-tools:latest
 cd /app
+python3 -m venv private_app_env --system-site-packages
 source private_app_env/bin/activate
-speculos build/nanos/bin/app.elf --model nanos
+speculos build/nanosp/bin/app.elf --model nanosp
 ```
 
 ## Compilation Options
@@ -96,7 +97,6 @@ bash-5.1$ make DEBUG=1  # compile optionally with PRINTF
 
 You can choose which device to compile and load for by setting the `BOLOS_SDK` environment variable to the following values:
 
-- `BOLOS_SDK=$NANOS_SDK`
 - `BOLOS_SDK=$NANOX_SDK`
 - `BOLOS_SDK=$NANOSP_SDK`
 - `BOLOS_SDK=$STAX_SDK`
@@ -115,8 +115,11 @@ bash-5.1$ make scan-build
 ### Loading on a physical device
 
 This step will vary slightly depending on your platform.
-
 > Your physical device must be connected, unlocked and the screen showing the dashboard (not inside an application).
+
+1) Download Ledger Live 
+2) [Unlock developer mode and enable developer tools](https://developers.ledger.com/docs/ledger-live/discover/references/developer-mode)
+3) Create a [manifest file](https://developers.ledger.com/docs/ledger-live/discover/references/manifest) for your app 
 
 ####  `Linux`
 First make sure you have the proper udev rules added on your host.
@@ -136,26 +139,29 @@ They are located in the directory `tests/functional`.
 Install the tests requirements:
 
 ```shell
+export PYTHONPATH=/app/private_app_env/lib/python3.11/site-packages
 pip install -r tests/functional/requirements.txt
-export PYTHONPATH=$PYTHONPATH:/app/private_app_env/lib/python3.9/site-packages
-pytest tests/functional/ --tb=short -v --device nanos
+pytest tests/functional/ --tb=short -v --device nanosp
 ```
 
 You can run emulated tests for a specific device or for all devices. Set `--device` to `all` for all devices.
 Use `--display` to see the emulated UI as the tests are run. The default mode runs the emulator in headless mode.
 
 ```shell
-pytest tests/functional/ -v --tb=short --device=nanos --display
+pytest tests/functional/ -v --tb=short --device=nanosp --display
 ```
 
-This is a run in headless mode for `nanos`
+This is a run in headless mode for `nanosp`
 ```shell
-pytest tests/functional/ --tb=short -v --device nanos
+pytest tests/functional/ --tb=short -v --device nanosp
 ```
 
 ##  Issues and Solutions
 
 #### Error Installing PyQt5
+
+Check the site libraries, the library you export should match 
+`python3 -m site`
 
 Here are the steps to get around the following error :
 ```

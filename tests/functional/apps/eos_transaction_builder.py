@@ -120,7 +120,7 @@ def encode_auth(data):
         parameters += pack('H', wait['weight'])
     return parameters
 
-
+# pylint: disable=no-member
 class Action:
     def encode(self, data, encoder):
         encoder.update(encode_name(data['account']))
@@ -131,9 +131,12 @@ class Action:
             encoder.update(encode_name(auth['actor']))
             encoder.update(encode_name(auth['permission']))
 
-        # pylint: disable=no-member
-        parameters = self.encode_action_parameters(data['data'])
-        # pylint: enable=no-member
+        # if hex encoded data is already provided use that
+        # otherwise create hex code from the provided JSON
+        if 'hex_data' in data and data['hex_data']:
+            parameters = unhexlify(data['hex_data'])
+        else:
+            parameters = self.encode_action_parameters(data['data'])
         encoder.update(encode_fc_uint(len(parameters)))
         encoder.update(parameters)
 
@@ -150,6 +153,8 @@ class TransferAction(Action):
 
         return parameters
 
+class SwapToAction(TransferAction):
+    pass
 
 class VoteProducerAction(Action):
     def encode_action_parameters(self, data):
@@ -164,15 +169,14 @@ class VoteProducerAction(Action):
 
 class BuyRamAction(Action):
     def encode_action_parameters(self, data):
-        parameters = encode_name(data['buyer'])
+        parameters = encode_name(data['payer'])
         parameters += encode_name(data['receiver'])
-        parameters += encode_asset(data['tokens'])
+        parameters += encode_asset(data['quant'])
         return parameters
-
 
 class BuyRamBytesAction(Action):
     def encode_action_parameters(self, data):
-        parameters = encode_name(data['buyer'])
+        parameters = encode_name(data['payer'])
         parameters += encode_name(data['receiver'])
         parameters += pack('I', data['bytes'])
         return parameters
@@ -253,6 +257,8 @@ class UnknownAction(Action):
 def instantiate_action(name):
     if name == 'transfer':
         return TransferAction()
+    if name == 'swapto':
+        return SwapToAction()
     if name == 'voteproducer':
         return VoteProducerAction()
     if name == 'buyram':
@@ -314,7 +320,7 @@ class Transaction():
         encoder.update(pack('I', expiration))
         encoder.update(pack('H', body['ref_block_num']))
         encoder.update(pack('I', body['ref_block_prefix']))
-        encoder.update(pack('B', body['net_usage_words']))
+        encoder.update(pack('B', body['max_net_usage_words']))
         encoder.update(pack('B', body['max_cpu_usage_ms']))
         encoder.update(pack('B', body['delay_sec']))
 
