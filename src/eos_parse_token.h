@@ -18,11 +18,14 @@
 #ifndef __EOS_PARSE_TOKEN_H__
 #define __EOS_PARSE_TOKEN_H__
 
+#include "os.h"
 #include "eos_parse.h"
 
 void parseTokenTransfer(uint8_t *buffer,
                         uint32_t bufferLength,
                         uint8_t argNum,
                         actionArgument_t *arg);
+
+bool isTransferDataValid(uint32_t actionDataBufferLength);
 
 #endif

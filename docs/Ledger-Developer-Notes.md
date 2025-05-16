@@ -6,7 +6,9 @@ Setting up the Speculos emulator and Ragger by using ledger's docker image
 
 User the [leger-app-builder](https://github.com/LedgerHQ/ledger-app-builder) dev-tools image 
 
+## Physical Devices
 > for Mac OSx you will need to install ledgerblue to sideload apps onto your physical device.
+[Ledger Blue Install Notes](https://pypi.org/project/ledgerblue/)
 
 - Follow instructions in [README](../README.md) to build & compile
 
