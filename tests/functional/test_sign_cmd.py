@@ -6,7 +6,7 @@ from ragger.bip import pack_derivation_path
 from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
-from ragger.firmware import Firmware
+from ledgered.devices import Device, DeviceType
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
@@ -49,7 +49,7 @@ unknown_trans = [(None,'transaction_unknown.json'),
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
 def test_sign_transaction_accepted(test_name: str,
-                                   firmware: Firmware,
+                                   device: Device,
                                    backend: BackendInterface,
                                    scenario_navigator: NavigateWithScenario,
                                    subdir: str,
@@ -59,7 +59,7 @@ def test_sign_transaction_accepted(test_name: str,
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
 
-    if firmware.is_nano:
+    if device.is_nano:
         end_text = "^Sign$"
     else:
         end_text = "^Hold to sign$"
@@ -71,7 +71,7 @@ def test_sign_transaction_accepted(test_name: str,
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
 def test_sign_transaction_refused(test_name: str,
-                                  firmware: Firmware,
+                                  device: Device,
                                   backend: BackendInterface,
                                   scenario_navigator: NavigateWithScenario,
                                   subdir: str,
@@ -81,7 +81,7 @@ def test_sign_transaction_refused(test_name: str,
     _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
     backend.raise_policy = RaisePolicy.RAISE_NOTHING
-    if firmware.is_nano:
+    if device.is_nano:
         end_text = "^Cancel$"
         with client.send_async_sign_message(VAULTA_PATH, message):
             scenario_navigator.review_reject(test_name=folder_name, custom_screen_text=end_text)
@@ -108,14 +108,14 @@ def get_nano_review_instructions(num_screen_skip):
 # fully contained in the first APDU before answering to it.
 # Therefore we can't use the simple check_transaction() helper nor the
 # send_async_sign_message() method and we need to do thing more manually.
-def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navigator):
+def test_sign_transaction_newaccount_accepted(test_name, device, backend, navigator):
     signing_digest, message = load_transaction_from_file("transaction_newaccount.json")
     client = EosClient(backend)
     payload = pack_derivation_path(VAULTA_PATH) + message
     messages = split_message(payload, MAX_CHUNK_SIZE)
     assert len(messages) == 2
 
-    if firmware.is_nano:
+    if device.is_nano:
         instructions = get_nano_review_instructions(2) + get_nano_review_instructions(7)
     else:
         instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 5
@@ -124,10 +124,10 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
                                        test_name + "/part1",
                                        instructions)
 
-    if firmware.is_nano:
+    if device.is_nano:
         instructions = get_nano_review_instructions(6) + get_nano_review_instructions(8)
     else:
-        if firmware == Firmware.FLEX:
+        if device.type == DeviceType.FLEX:
             instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 6
         else:
             instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 5
@@ -148,7 +148,7 @@ def test_sign_transaction_newaccount_accepted(test_name, firmware, backend, navi
 # need to do thing more manually.
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
 def test_sign_transaction_unknown_fail(test_name,
-                                    firmware,
+                                    device,
                                     backend,
                                     navigator,
                                     subdir,
@@ -162,7 +162,7 @@ def test_sign_transaction_unknown_fail(test_name,
     payload = pack_derivation_path(VAULTA_PATH) + message
     messages = split_message(payload, MAX_CHUNK_SIZE)
 
-    if firmware.device.startswith("nano"):
+    if device.is_nano:
         instructions = get_nano_review_instructions(2)
     else:
         instructions = [NavInsID.USE_CASE_REVIEW_TAP]
