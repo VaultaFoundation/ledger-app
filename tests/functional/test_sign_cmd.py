@@ -1,7 +1,7 @@
 from json import load
 import pytest
 
-from ledgered.devices import Device, DeviceType
+from ledgered.devices import Device, DeviceType # type: ignore
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
 from ragger.navigator import NavInsID
