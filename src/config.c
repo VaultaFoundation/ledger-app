@@ -17,7 +17,7 @@
 #include "os.h"
 
 typedef struct internalStorage_t {
-    uint8_t dataAllowed;
+    uint8_t unknownActionAllowed;
     uint8_t initialized;
 } internalStorage_t;
 
@@ -27,17 +27,17 @@ const internalStorage_t N_storage_real;
 void config_init(void) {
     if (N_storage.initialized != 0x01) {
         internalStorage_t storage;
-        storage.dataAllowed = 0x00;
+        storage.unknownActionAllowed = 0x00;
         storage.initialized = 0x01;
         nvm_write((void *) &N_storage, (void *) &storage, sizeof(internalStorage_t));
     }
 }
 
-bool is_data_allowed(void) {
-    return N_storage.dataAllowed == 1;
+bool is_unknown_action_allowed(void) {
+    return N_storage.unknownActionAllowed == 1;
 }
 
-void toogle_data_allowed(void) {
-    uint8_t value = (is_data_allowed() ? 0 : 1);
-    nvm_write((void *) &N_storage.dataAllowed, (void *) &value, sizeof(uint8_t));
+void toogle_unknown_action_allowed(void) {
+    uint8_t value = (is_unknown_action_allowed() ? 0 : 1);
+    nvm_write((void *) &N_storage.unknownActionAllowed, (void *) &value, sizeof(uint8_t));
 }

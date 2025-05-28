@@ -45,8 +45,8 @@ static void controlsCallback(int token, uint8_t index, int page) {
     if (token != FIRST_USER_TOKEN) {
         return;
     }
-    toogle_data_allowed();
-    switches[0].initState = is_data_allowed();
+    toogle_unknown_action_allowed();
+    switches[0].initState = is_unknown_action_allowed();
 }
 
 void ui_idle(void) {
@@ -54,9 +54,9 @@ void ui_idle(void) {
     static nbgl_content_t contents[1] = {0};
     static nbgl_genericContents_t settingContents = {0};
 
-    switches[0].initState = is_data_allowed();
+    switches[0].initState = is_unknown_action_allowed();
     switches[0].text = "Contract data";
-    switches[0].subText = "Allow contract data in transactions";
+    switches[0].subText = "Allow unknown action in transactions";
     switches[0].token = FIRST_USER_TOKEN;
 
     contents[0].type = SWITCHES_LIST;

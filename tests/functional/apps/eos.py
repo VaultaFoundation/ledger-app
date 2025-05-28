@@ -74,7 +74,7 @@ class EosClient:
     def send_get_app_configuration(self) -> Tuple[bool, Tuple[int, int, int]]:
         rapdu: RAPDU = self._client.exchange(CLA, INS.INS_GET_APP_CONFIGURATION, 0, 0, b"")
         response = rapdu.data
-        # response = dataAllowed (1) ||
+        # response = unknownActionAllowed (1) ||
         #            MAJOR_VERSION (1) ||
         #            MINOR_VERSION (1) ||
         #            PATCH_VERSION (1)
