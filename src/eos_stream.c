@@ -53,13 +53,13 @@ void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
                    cx_sha256_t *dataSha256,
                    txProcessingContent_t *processingContent,
-                   uint8_t dataAllowed) {
+                   uint8_t allowUnknownAction) {
     memset(context, 0, sizeof(txProcessingContext_t));
     context->sha256 = sha256;
     context->dataSha256 = dataSha256;
     context->content = processingContent;
     context->state = TLV_CHAIN_ID;
-    context->dataAllowed = dataAllowed;
+    context->unknownActionAllowed = allowUnknownAction;
     cx_sha256_init(context->sha256);
     cx_sha256_init(context->dataSha256);
 }
@@ -348,7 +348,7 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
                 parseNewAccount(buffer, bufferLength, argNum, arg);
                 break;
             default:
-                if (context->dataAllowed == 1) {
+                if (context->unknownActionAllowed == 1) {
                     parseUnknownAction(context->dataChecksum,
                                        sizeof(context->dataChecksum),
                                        argNum,
@@ -358,7 +358,7 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    if (context->dataAllowed == 1) {
+    if (context->unknownActionAllowed == 1) {
         parseUnknownAction(context->dataChecksum, sizeof(context->dataChecksum), argNum, arg);
     }
 }
@@ -894,7 +894,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA_SIZE:
-                if (isKnownAction(context) || context->dataAllowed == 0) {
+                if (isKnownAction(context) || context->unknownActionAllowed == 0) {
                     processField(context);
                 } else {
                     processUnknownActionDataSize(context);
@@ -904,7 +904,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
             case TLV_ACTION_DATA:
                 if (isKnownAction(context)) {
                     processActionData(context);
-                } else if (context->dataAllowed == 1) {
+                } else if (context->unknownActionAllowed == 1) {
                     processUnknownActionData(context);
                 } else {
                     PRINTF("UNKNOWN ACTION");

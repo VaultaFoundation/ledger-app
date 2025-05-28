@@ -87,29 +87,15 @@ void ui_idle(void) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if defined(TARGET_NANOS)
-
-UX_STEP_CB(ux_settings_flow_1_step,
-           bnnn_paging,
-           switch_settings_contract_data(),
-           {
-               .title = "Contract data",
-               .text = confirmLabel,
-           });
-
-#else
-
 UX_STEP_CB(ux_settings_flow_1_step,
            bnnn,
            switch_settings_contract_data(),
            {
                "Contract data",
-               "Allow contract data",
+               "Unknown Action",
                "in transactions",
                confirmLabel,
            });
-
-#endif
 
 UX_STEP_CB(ux_settings_flow_2_step,
            pb,
@@ -122,12 +108,14 @@ UX_STEP_CB(ux_settings_flow_2_step,
 UX_FLOW(ux_settings_flow, &ux_settings_flow_1_step, &ux_settings_flow_2_step);
 
 static void display_settings(void) {
-    strlcpy(confirmLabel, (is_data_allowed() ? "Allowed" : "NOT Allowed"), sizeof(confirmLabel));
+    strlcpy(confirmLabel,
+            (is_unknown_action_allowed() ? "Allowed" : "NOT Allowed"),
+            sizeof(confirmLabel));
     ux_flow_init(0, ux_settings_flow, NULL);
 }
 
 static void switch_settings_contract_data(void) {
-    toogle_data_allowed();
+    toogle_unknown_action_allowed();
     display_settings();
 }
 
