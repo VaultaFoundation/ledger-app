@@ -108,7 +108,9 @@ UX_STEP_CB(ux_settings_flow_2_step,
 UX_FLOW(ux_settings_flow, &ux_settings_flow_1_step, &ux_settings_flow_2_step);
 
 static void display_settings(void) {
-    strlcpy(confirmLabel, (is_unknown_action_allowed() ? "Allowed" : "NOT Allowed"), sizeof(confirmLabel));
+    strlcpy(confirmLabel,
+            (is_unknown_action_allowed() ? "Allowed" : "NOT Allowed"),
+            sizeof(confirmLabel));
     ux_flow_init(0, ux_settings_flow, NULL);
 }
 
