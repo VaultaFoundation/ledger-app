@@ -30,6 +30,8 @@
 /* CONTRACT OWNERS */
 #define CORE_VAULTA 0x452EA06CDA8E4C00
 #define EOSIO       0x5530EA0000000000
+/* Allow no-op signing requests from trusted account */
+#define NULL_VAULTA 0x9EA3106CDA8E4C00
 
 /* ACTIONS */
 #define TOKEN_TRANSFER_ACTION 0xCDCD3C2D57000000
@@ -85,6 +87,11 @@ static void processTokenTransfer(txProcessingContext_t *context) {
     if (memoLength > 0) {
         context->content->argumentCount++;
     }
+}
+
+/* no-op has no args no abi */
+static void processNoOperation(txProcessingContext_t *context) {
+    context->content->argumentCount = 1;
 }
 
 static void processEosioDelegate(txProcessingContext_t *context) {
@@ -309,6 +316,16 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
+    /* TODO: context->currentFieldLength == 0 */
+    /*
+     * Process signing requests with no data, no args
+     * Additional context string in UX_STEP functions
+     * */
+    if (contractName == NULL_VAULTA) {
+        parseNoOperation(bufferLength, arg);
+        return;
+    }
+
     if (contractName == EOSIO || contractName == CORE_VAULTA) {
         switch (actionName) {
             case DELEGATEBW_ACTION:
@@ -372,6 +389,14 @@ static bool isKnownAction(txProcessingContext_t *context) {
     }
 
     if (actionName == TOKEN_TRANSFER_ACTION && isTransferDataValid(context->currentFieldLength)) {
+        return true;
+    }
+
+    /* TODO: context->currentFieldLength == 0 */
+    /* Allow no-op signing requests from trusted account
+     * All actions from this account have no arguments
+     * User will see the action name before signing */
+    if (contractName == NULL_VAULTA) {
         return true;
     }
 
@@ -750,6 +775,10 @@ static void processActionData(txProcessingContext_t *context) {
 
         } else if (context->contractActionName == TOKEN_TRANSFER_ACTION) {
             processTokenTransfer(context);
+
+        } else if (context->contractName == NULL_VAULTA) {
+            /* Allow no-op signing requests from trusted account */
+            processNoOperation(context);
 
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
             switch (context->contractActionName) {

@@ -68,6 +68,14 @@ void parseUndelegate(uint8_t *buffer,
     }
 }
 
+void parseNoOperation(uint32_t bufferLength, actionArgument_t *arg) {
+    if (bufferLength == 0) {
+        printString("No Data", "Payload", arg);
+    } else {
+        printString("Unknown Data", "WARNING", arg);
+    }
+}
+
 void parseRefund(uint8_t *buffer, uint32_t bufferLength, uint8_t argNum, actionArgument_t *arg) {
     uint32_t read = 0;
     uint32_t written = 0;
