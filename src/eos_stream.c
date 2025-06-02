@@ -316,7 +316,6 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    /* TODO: context->currentFieldLength == 0 */
     /*
      * Process signing requests with no data, no args
      * Additional context string in UX_STEP functions
@@ -392,7 +391,6 @@ static bool isKnownAction(txProcessingContext_t *context) {
         return true;
     }
 
-    /* TODO: context->currentFieldLength == 0 */
     /* Allow no-op signing requests from trusted account
      * All actions from this account have no arguments
      * User will see the action name before signing */
