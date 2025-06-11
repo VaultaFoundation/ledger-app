@@ -16,7 +16,6 @@
  ********************************************************************************/
 
 #include <string.h>
-#include "ledger_assert.h"
 #include "eos_stream.h"
 #include "os.h"
 #include "cx.h"
@@ -316,9 +315,10 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    /*
-     * Process signing requests with no data, no args
-     * Additional context string in UX_STEP functions
+    /* *
+     * Actions from trusted account do not change on-chain state
+     * These actions are used to validate identity 
+     * or set authorization for future on-chain transaction
      * */
     if (contractName == NULL_VAULTA) {
         parseNoOperation(bufferLength, arg);
@@ -391,9 +391,11 @@ static bool isKnownAction(txProcessingContext_t *context) {
         return true;
     }
 
-    /* Allow no-op signing requests from trusted account
-     * All actions from this account have no arguments
-     * User will see the action name before signing */
+    /* *
+     * Actions from trusted account do not change on-chain state
+     * These actions are used to validate identity 
+     * or set authorization for future on-chain transaction
+     * */
     if (contractName == NULL_VAULTA) {
         return true;
     }
@@ -774,8 +776,8 @@ static void processActionData(txProcessingContext_t *context) {
         } else if (context->contractActionName == TOKEN_TRANSFER_ACTION) {
             processTokenTransfer(context);
 
+        // no args or data expected
         } else if (context->contractName == NULL_VAULTA) {
-            /* Allow no-op signing requests from trusted account */
             processNoOperation(context);
 
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {

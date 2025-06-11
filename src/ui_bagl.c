@@ -26,11 +26,9 @@
 #include "main.h"
 #include "ui.h"
 #include "config.h"
-#include "action_label.h"
 
 static char actionCounter[32];
 static char confirmLabel[32];
-static char actionLabel[32];
 
 // display stepped screens
 static unsigned int ux_step;
@@ -186,20 +184,12 @@ UX_STEP_NOCB(ux_single_action_sign_flow_2_step,
                  "Contract",
                  txContent.contract,
              });
-
-// dynamic step enhance UI for signiture only actions
-void init_action_step(void) {
-    set_action_label(txContent.contract, actionLabel, sizeof(actionLabel));
-}
-
-UX_STEP_NOCB_INIT(ux_single_action_sign_flow_3_step,
-                  bn,
-                  { init_action_step(); },
-                  {
-                      actionLabel,
-                      txContent.action,
-                  });
-
+UX_STEP_NOCB(ux_single_action_sign_flow_3_step,
+             bn,
+             {
+                 "Action",
+                 txContent.action,
+             });
 UX_STEP_INIT(ux_init_left_border, NULL, NULL, { display_next_state(STATE_LEFT_BORDER); });
 
 UX_STEP_NOCB_INIT(ux_single_action_sign_flow_variable_step,
