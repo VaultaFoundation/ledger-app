@@ -14,22 +14,11 @@
         "name": "baraction",
         "authorization": [
           {
-            "actor": "cryptofairy1",
+            "actor": "foocontract",
             "permission": "active"
           }
         ],
-        "data": "test"
-      },
-      {
-        "account": "bazcontract",
-        "name": "fooaction",
-        "authorization": [
-          {
-            "actor": "cryptofairy1",
-            "permission": "active"
-          }
-        ],
-        "data": "deadbeef"
+        "data": "0474657374"
       }
     ],
     "transaction_extensions": []

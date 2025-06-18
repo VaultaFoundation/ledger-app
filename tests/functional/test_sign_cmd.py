@@ -44,9 +44,9 @@ unknown_trans = [(None,'transaction_unknown.json'),
                 ('wampus','transaction_noparams.json'),
                 ('wampus','transaction_nomemo.json')]
 
+
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out parameterized tests accepts a list of tuples
-
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
 def test_sign_transaction_accepted(test_name: str,
                                    device: Device,
@@ -68,6 +68,7 @@ def test_sign_transaction_accepted(test_name: str,
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
 def test_sign_transaction_refused(test_name: str,
@@ -146,8 +147,7 @@ def test_sign_transaction_newaccount_accepted(test_name, device, backend, naviga
 # fully contained in the first APDU before answering to it.
 # Therefore we can't use the simple send_async_sign_message() method and we
 # need to do thing more manually.
-@pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
-def test_sign_transaction_unknown_fail(test_name,
+def sign_transaction_multiple_actions(test_name,
                                     device,
                                     backend,
                                     navigator,

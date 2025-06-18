@@ -16,18 +16,7 @@
             "actor": "alicetest123",
             "permission": "active"
         }],
-        "data": {},
-        "hex_data": "00"
-      },
-      {
-        "account": "wampus.token",
-        "name": "transfer",
-        "authorization": [{
-            "actor": "alicetest123",
-            "permission": "active"
-        }],
-        "data": {},
-        "hex_data": "00"
+        "data": {}
       }
     ],
     "transaction_extensions": [],

@@ -137,9 +137,16 @@ class Action:
             parameters = unhexlify(data['hex_data'])
         else:
             parameters = self.encode_action_parameters(data['data'])
-        encoder.update(encode_fc_uint(len(parameters)))
-        encoder.update(parameters)
+        if parameters is None:
+            parameters = encoder.update(encode_fc_uint(len(b'')))
+            encoder.update(b'')
+        else:
+            encoder.update(encode_fc_uint(len(parameters)))
+            encoder.update(parameters)
 
+class NoOp(Action):
+    def encode_action_parameters(self, data):
+        return None
 
 class TransferAction(Action):
     def encode_action_parameters(self, data):
@@ -247,11 +254,9 @@ class DelegateAction(Action):
 
 
 class UnknownAction(Action):
+    # requires hex_data unable to parse unknown 
     def encode_action_parameters(self, data):
-        # On purpose dummy and very long action to test the parser behavior
-        data = data * 1000
-        parameters = pack(f'{len(data)}s', data.encode())
-        return parameters
+        pass
 
 
 def instantiate_action(name):
@@ -281,6 +286,8 @@ def instantiate_action(name):
         return NewAccountAction()
     if name == 'delegatebw':
         return DelegateAction()
+    if name == 'noop':
+        return NoOp()
     return UnknownAction()
 
 
@@ -306,7 +313,6 @@ class TransactionEncoder():
 
 
 class Transaction():
-
     def encode(self, json):
         encoder = TransactionEncoder()
         encoder.start()
