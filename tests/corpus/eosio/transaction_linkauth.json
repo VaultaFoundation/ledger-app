@@ -20,9 +20,9 @@
         ],
         "data": {
           "account": "cryptofairy1",
-          "contract": "eosbet",
-          "action": "whatever",
-          "permission": "active"
+          "code": "eosbet",
+          "type": "whatever",
+          "requirement": "active"
         }
       }
     ],

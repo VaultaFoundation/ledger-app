@@ -36,14 +36,14 @@
             ],
             "accounts": [
               {
-                "authorization": {
+                "permission": {
                   "actor": "cryptofairy5",
                   "permission": "active"
                 },
                 "weight": 1
               },
               {
-                "authorization": {
+                "permission": {
                   "actor": "b1",
                   "permission": "owner"
                 },
@@ -52,11 +52,11 @@
             ],
             "waits": [
               {
-                "wait": 40,
+                "wait_sec": 40,
                 "weight": 4
               },
               {
-                "wait": 12,
+                "wait_sec": 12,
                 "weight": 2
               }
             ]

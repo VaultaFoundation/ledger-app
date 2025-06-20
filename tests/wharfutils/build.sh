@@ -16,7 +16,7 @@ if [ $? != 0 ]; then print_red "conversion to javascript failed"; exit 1; fi
 for f in $(find  ../corpus/ -name "*.json")
 do
   output="${f%.json}.serialized.bytes"
-  node serialize.js "${f}" > "${output}"
+  node serialize.js "${f}" 1> "${output}" 2>/dev/null
   if [ $? != 0 ]; then 
     print_red "Failed to process ${f}"
   else

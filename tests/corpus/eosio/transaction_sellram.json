@@ -19,7 +19,7 @@
             }
           ],
           "data": {
-            "receiver": "cryptofairy1",
+            "account": "cryptofairy1",
             "bytes": 1024
           }
         }

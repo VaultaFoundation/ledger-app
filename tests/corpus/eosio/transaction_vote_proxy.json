@@ -19,7 +19,7 @@
           }
         ],
         "data": {
-          "account": "cryptofairy1",
+          "voter": "cryptofairy1",
           "proxy": "cryptofairy2",
           "producers": []
         }

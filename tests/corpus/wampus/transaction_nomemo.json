@@ -20,7 +20,8 @@
             "from": "alicetest123",
             "to": "alicetestlio",
             "quantity": "10.0000 A"
-        }
+        },
+        "hex_data":"3044c85865855c34405dcc5865855c34a0860100000000000441000000000000"
       }
     ],
     "transaction_extensions": [],

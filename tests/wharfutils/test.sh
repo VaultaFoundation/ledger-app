@@ -34,9 +34,16 @@ else
     print_red "Failed Simple Test: Python Byte Format"
 fi
 
-transaction_output=$(node serialize.js ./test-data/transfer-action.json ./transaction.abi.json hex)
-if [ $transaction_output == "32342268befe0240e6e40000000001004c8eda6ca02e45000000572d3ccdcd013044c85865855c3400000000a8ed32320000" ]; then
+expected_output="32342268befe0240e6e40000000001004c8eda6ca02e45000000572d3ccdcd013044c85865855c3400000000a8ed3232243044c85865855c34405dcc5865855c34a08601000000000004410000000000000374783200"
+transaction_output=$(node serialize.js ./test-data/transfer-action.json ./abi/transaction.abi.json hex)
+if [ $transaction_output == $expected_output ]; then
     print_green "Passed Transaction Test: Hex Format"
 else
     print_red "Failed Transaction Test: Hex Format"
+fi
+transaction_hexdata_output=$(node serialize.js ./test-data/transfer-action-hexdata.json ./abi/transaction.abi.json hex)
+if [ $transaction_output == $transaction_hexdata_output ]; then
+    print_green "Passed Equalivant Test: JSon and Hex Action Data"
+else
+    print_red "Failed Equalivant Test: JSon and Hex Action Data"
 fi

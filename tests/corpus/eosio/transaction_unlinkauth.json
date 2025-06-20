@@ -20,8 +20,8 @@
         ],
         "data": {
           "account": "cryptofairy1",
-          "contract": "eosbet",
-          "action": "whatever"
+          "code": "eosbet",
+          "type": "whatever"
         }
       }
     ],

@@ -19,8 +19,8 @@
           }
         ],
         "data": {
-          "account": "cryptofairy1",
-          "proxy": "",
+          "voter": "cryptofairy1",
+          "proxy": "p",
           "producers": [
             "argentinaeos",
             "bitfinexeos1",
