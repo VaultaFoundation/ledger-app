@@ -111,12 +111,12 @@ def encode_auth(data):
         parameters += pack('H', key['weight'])
     parameters += pack('B', len(data['accounts']))
     for account in data['accounts']:
-        parameters += encode_name(account['authorization']['actor'])
-        parameters += encode_name(account['authorization']['permission'])
+        parameters += encode_name(account['permission']['actor'])
+        parameters += encode_name(account['permission']['permission'])
         parameters += pack('H', account['weight'])
     parameters += pack('B', len(data['waits']))
     for wait in data['waits']:
-        parameters += pack('I', wait['wait'])
+        parameters += pack('I', wait['wait_sec'])
         parameters += pack('H', wait['weight'])
     return parameters
 
@@ -165,7 +165,7 @@ class SwapToAction(TransferAction):
 
 class VoteProducerAction(Action):
     def encode_action_parameters(self, data):
-        parameters = encode_name(data['account'])
+        parameters = encode_name(data['voter'])
         parameters += encode_name(data['proxy'])
         parameters += encode_fc_uint(len(data['producers']))
         for producer in data['producers']:
@@ -191,7 +191,7 @@ class BuyRamBytesAction(Action):
 
 class SellRamAction(Action):
     def encode_action_parameters(self, data):
-        parameters = encode_name(data['receiver'])
+        parameters = encode_name(data['account'])
         parameters += pack('Q', data['bytes'])
         return parameters
 
@@ -214,30 +214,30 @@ class DeleteAuthAction(Action):
 
 class RefundAction(Action):
     def encode_action_parameters(self, data):
-        return encode_name(data['account'])
+        return encode_name(data['owner'])
 
 
 class LinkAuthAction(Action):
     def encode_action_parameters(self, data):
         parameters = encode_name(data['account'])
-        parameters += encode_name(data['contract'])
-        parameters += encode_name(data['action'])
-        parameters += encode_name(data['permission'])
+        parameters += encode_name(data['code'])
+        parameters += encode_name(data['type'])
+        parameters += encode_name(data['requirement'])
         return parameters
 
 
 class UnlinkAuthAction(Action):
     def encode_action_parameters(self, data):
         parameters = encode_name(data['account'])
-        parameters += encode_name(data['contract'])
-        parameters += encode_name(data['action'])
+        parameters += encode_name(data['code'])
+        parameters += encode_name(data['type'])
         return parameters
 
 
 class NewAccountAction(Action):
     def encode_action_parameters(self, data):
         parameters = encode_name(data['creator'])
-        parameters += encode_name(data['newact'])
+        parameters += encode_name(data['name'])
         parameters += encode_auth(data['owner'])
         parameters += encode_auth(data['active'])
         return parameters
@@ -246,7 +246,7 @@ class NewAccountAction(Action):
 class DelegateAction(Action):
     def encode_action_parameters(self, data):
         parameters = encode_name(data['from'])
-        parameters += encode_name(data['to'])
+        parameters += encode_name(data['receiver'])
         parameters += encode_asset(data['stake_net_quantity'])
         parameters += encode_asset(data['stake_cpu_quantity'])
         parameters += bytes([0x01]) if data['transfer'] else bytes([0x00])

@@ -1,4 +1,4 @@
-import { Serializer, ABI, Bytes } from '@wharfkit/antelope'
+import { Serializer, ABI, Bytes, PackedTransaction, SignedTransaction } from '@wharfkit/antelope'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -52,7 +52,7 @@ function retrieveABI(account: string): ABI {
     case 'foocontract':
       var vaultABIJson = JSON.parse(fs.readFileSync(path.resolve('./abi/foocontract.abi.json'), 'utf-8'))
       return ABI.from(vaultABIJson)
-      break      
+      break
     default:
       var vaultABIJson = JSON.parse(fs.readFileSync(path.resolve('./abi/core.vaulta.abi.json'), 'utf-8'))
       return ABI.from(vaultABIJson)
@@ -112,8 +112,6 @@ const encodedTransaction = Serializer.encode({
   type: abiType
 })
 
-
-
 switch (format) {
   case 'python-byte-string':
     console.log(toPythonByteString(encodedTransaction))
@@ -124,6 +122,8 @@ switch (format) {
   case 'utf8-string':
     console.log(encodedTransaction.utf8String)
     break
+  case 'raw':
+    console.log(encodedTransaction)
   default:
     console.error(`Unknown format: ${format}`)
     process.exit(1)

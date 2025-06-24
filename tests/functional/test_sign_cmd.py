@@ -18,16 +18,15 @@ VAULTA_PATH = "m/44'/194'/12345'"
 
 
 def load_transaction_from_file(transaction_filename, subdir=None):
-    transaction_filename_bytes=transaction_filename.replace(".json", ".serialized.bytes")
     if subdir:
-        transaction_file_path = CORPUS_DIR / subdir / transaction_filename_bytes
+        transaction_file_path = CORPUS_DIR / subdir / transaction_filename
     else:
-        transaction_file_path = CORPUS_DIR / transaction_filename_bytes
+        transaction_file_path = CORPUS_DIR / transaction_filename
 
     with transaction_file_path.open("r", encoding="utf-8") as f:
-        encoded_transaction = f
+        obj = load(f)
 
-    return sha256(encoded_transaction).digest(), encoded_transaction
+    return Transaction().encode(obj)
 
 # Remove files with no tag and pull out refused trx
 # corner case transaction that are handled separately
