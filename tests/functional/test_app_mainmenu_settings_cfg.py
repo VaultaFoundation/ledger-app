@@ -40,13 +40,13 @@ def _verify_version(version: str) -> None:
     assert version == vers_str
 
 
-def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name):
+def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
     client = EosClient(backend)
 
     # Get appversion and "data_allowed parameter"
     # This works on both the emulator and a physical device
-    data_allowed, version = client.send_get_app_configuration()
-    assert data_allowed is False
+    unknown_allowed, version = client.send_get_app_configuration()
+    assert unknown_allowed is False
     _verify_version(version)
 
     # scoping navigation and next test to the emulator
@@ -75,10 +75,14 @@ def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name):
                 NavInsID.USE_CASE_SETTINGS_PREVIOUS,
                 NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
             ]
-        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, instructions,
-                                       screen_change_before_first_instruction=False)
+        # test_name null means this is a config change event, not a test
+        if test_name:
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, instructions,
+                                           screen_change_before_first_instruction=False)
+        else:
+            navigator.navigate(instructions,screen_change_before_first_instruction=False)
 
         # Check that "data_allowed parameter" changed
-        data_allowed, version = client.send_get_app_configuration()
-        assert data_allowed is True
+        unknown_allowed, version = client.send_get_app_configuration()
+        assert unknown_allowed is True
         _verify_version(version)

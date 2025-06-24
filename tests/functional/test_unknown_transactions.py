@@ -8,6 +8,7 @@ from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
+from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
@@ -33,29 +34,28 @@ unknown_trans = [(None,'transaction_unknown.json'),
                 ('wampus','transaction_nomemo.json')]
 
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
-def test_malformed_transfer(test_name,
-                                    device,
-                                    backend,
-                                    navigator,
-                                    subdir,
-                                    transaction_filename):
-    
-    folder_name = test_name + "/" + transaction_filename.replace(".json", "")
-    if subdir:
-        folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
-    _, message = load_transaction_from_file(transaction_filename, subdir)
+def test_malformed_transfer(test_name: str,
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
 
+    # navigate and turn on settings 
+    if transaction_filename == 'transaction_unknown.json':
+        test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+
+    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
+
+    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
-    # Get appversion and "data_allowed parameter"
-    # This works on both the emulator and a physical device
-    data_allowed, version = client.send_get_app_configuration()
-    assert data_allowed is False
-    payload = pack_derivation_path(VAULTA_PATH) 
-    
-    
-    with client.send_async_sign_message_full(payload, True):
-        backend.raise_policy = RaisePolicy.RAISE_NOTHING
-        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
-                    folder_name,
-                    [NavInsID.RIGHT_CLICK,NavInsID.RIGHT_CLICK,NavInsID.BOTH_CLICK],
-                    screen_change_before_first_instruction=False)
+
+    if device.is_nano:
+        end_text = "^Sign$"
+    else:
+        end_text = "^Hold to sign$"
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
+    rapdu = client.get_async_response()
+    assert rapdu.status == STATUS_OK
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)

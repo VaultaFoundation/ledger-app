@@ -9,6 +9,7 @@ from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
+from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
@@ -55,6 +56,12 @@ def test_sign_transaction_accepted(test_name: str,
                                    scenario_navigator: NavigateWithScenario,
                                    subdir: str,
                                    transaction_filename: str):
+    
+    # navigate and turn on settings 
+    if transaction_filename == 'transaction_unknown.json':
+        test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+
+
     folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
 
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
