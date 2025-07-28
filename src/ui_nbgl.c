@@ -31,14 +31,12 @@
 #include "ui.h"
 #include "config.h"
 #include "eos_parse.h"
-#include "action_label.h"
 
 void app_exit(void);
 
 static nbgl_contentSwitch_t switches[1] = {0};
 static const char* const INFO_TYPES[] = {"Version"};
 static const char* const INFO_CONTENTS[] = {APPVERSION};
-static char actionLabel[32];
 
 static void controlsCallback(int token, uint8_t index, int page) {
     UNUSED(index);
@@ -125,7 +123,7 @@ static nbgl_contentTagValue_t* get_single_action_review_pair(uint8_t index) {
         pair.item = "Contract";
         pair.value = txContent.contract;
     } else if (index == 1) {
-        pair.item = actionLabel;
+        pair.item = "Action";
         pair.value = txContent.action;
     } else {
         // Retrieve action argument, with an index to action args offset
@@ -185,8 +183,6 @@ static void review_choice_multi(bool confirm) {
 
 void ui_display_single_action_sign_flow(void) {
     explicit_bzero(&pairList, sizeof(pairList));
-    // sets label to static string
-    set_action_label(txContent.contract, actionLabel, sizeof(actionLabel));
 
     if (txProcessingCtx.currentActionNumber == 1) {
         pairList.nbPairs = txContent.argumentCount + 2;

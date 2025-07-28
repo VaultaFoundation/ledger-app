@@ -9,6 +9,7 @@ from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
+from test_sign_cmd import get_nano_review_instructions
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
@@ -27,11 +28,50 @@ def load_transaction_from_file(transaction_filename, subdir=None):
 
     return Transaction().encode(obj)
 
+def assemble_snapshot_folder_name(test_name, subdir, transaction_filename):
+    if subdir:
+        folder_name = test_name +"/"+ subdir +"/"+ transaction_filename.replace(".json", "")
+    else:
+        folder_name = test_name +"/"+ transaction_filename.replace(".json", "")
+    
+    return folder_name
+
 # These files are in the corpus 
-unknown_trans = [(None,'transaction_unknown.json'),
+unknown_trans = [('wampus','transaction_unknown.json'),
                 ('wampus','transaction_badparam.json'),
                 ('wampus','transaction_noparams.json'),
                 ('wampus','transaction_nomemo.json')]
+
+# This transaction contains multiples actions which doesn't fit in one APDU.
+# Therefore the app implementation ask the user to validate the action
+# fully contained in the first APDU before answering to it.
+# Therefore we can't use the simple send_async_sign_message() method and we
+# need to do thing more manually.
+@pytest.mark.parametrize("transaction_filename", ['transaction_unknown.json'])
+def test_sign_transaction_multiple_actions(test_name,
+                                    device,
+                                    backend,
+                                    navigator,
+                                    transaction_filename):
+
+    folder_name = test_name + "/" + transaction_filename.replace(".json", "")
+
+    _, message = load_transaction_from_file(transaction_filename)
+    client = EosClient(backend)
+    payload = pack_derivation_path(VAULTA_PATH) + message
+    messages = split_message(payload, MAX_CHUNK_SIZE)
+
+    if device.is_nano:
+        instructions = get_nano_review_instructions(2)
+    else:
+        instructions = [NavInsID.USE_CASE_REVIEW_TAP]
+    with client.send_async_sign_message_full(messages[0], True):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
+                                       folder_name,
+                                       instructions)
+    rapdu = client.get_async_response()
+    assert rapdu.status == 0x6A80
 
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
 def test_malformed_transfer(test_name: str,
@@ -41,11 +81,10 @@ def test_malformed_transfer(test_name: str,
                             subdir: str,
                             transaction_filename: str):
 
-    # navigate and turn on settings 
-    if transaction_filename == 'transaction_unknown.json':
-        test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+    # Allow Unknow Actions: navigate and turn on settings 
+    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
 
-    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
+    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
 
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
@@ -55,7 +94,7 @@ def test_malformed_transfer(test_name: str,
     else:
         end_text = "^Hold to sign$"
     with client.send_async_sign_message(VAULTA_PATH, message):
-        scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
+        scenario_navigator.review_approve(test_name=snapshot_folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)

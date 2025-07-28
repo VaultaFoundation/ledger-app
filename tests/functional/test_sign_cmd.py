@@ -17,7 +17,6 @@ from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR, TAGGED_CORPUS_FILES
 # Proposed EOS derivation paths for tests ###
 VAULTA_PATH = "m/44'/194'/12345'"
 
-
 def load_transaction_from_file(transaction_filename, subdir=None):
     if subdir:
         transaction_file_path = CORPUS_DIR / subdir / transaction_filename
@@ -38,14 +37,10 @@ transactions = [
         and item[1] != 'transaction_badparam.json'
         and item[1] != 'transaction_noparams.json'
         and item[1] != 'transaction_nomemo.json'
+        and item[1] != 'transaction_unknown.json'
 ]
 
 refused_trans = [('eosio','transaction_refused.json'),('vaulta','transaction_refused.json')]
-unknown_trans = [(None,'transaction_unknown.json'),
-                ('wampus','transaction_badparam.json'),
-                ('wampus','transaction_noparams.json'),
-                ('wampus','transaction_nomemo.json')]
-
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out parameterized tests accepts a list of tuples
@@ -56,11 +51,6 @@ def test_sign_transaction_accepted(test_name: str,
                                    scenario_navigator: NavigateWithScenario,
                                    subdir: str,
                                    transaction_filename: str):
-    
-    # navigate and turn on settings 
-    if transaction_filename == 'transaction_unknown.json':
-        test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
-
 
     folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
 
@@ -148,36 +138,3 @@ def test_sign_transaction_newaccount_accepted(test_name, device, backend, naviga
                                        instructions)
     response = client.get_async_response().data
     client.verify_signature(VAULTA_PATH, signing_digest, response)
-
-
-# This transaction contains multiples actions which doesn't fit in one APDU.
-# Therefore the app implementation ask the user to validate the action
-# fully contained in the first APDU before answering to it.
-# Therefore we can't use the simple send_async_sign_message() method and we
-# need to do thing more manually.
-def sign_transaction_multiple_actions(test_name,
-                                    device,
-                                    backend,
-                                    navigator,
-                                    subdir,
-                                    transaction_filename):
-
-    folder_name = test_name + "/" + transaction_filename.replace(".json", "")
-    if subdir:
-        folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
-    _, message = load_transaction_from_file(transaction_filename, subdir)
-    client = EosClient(backend)
-    payload = pack_derivation_path(VAULTA_PATH) + message
-    messages = split_message(payload, MAX_CHUNK_SIZE)
-
-    if device.is_nano:
-        instructions = get_nano_review_instructions(2)
-    else:
-        instructions = [NavInsID.USE_CASE_REVIEW_TAP]
-    with client.send_async_sign_message_full(messages[0], True):
-        backend.raise_policy = RaisePolicy.RAISE_NOTHING
-        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
-                                       folder_name,
-                                       instructions)
-    rapdu = client.get_async_response()
-    assert rapdu.status == 0x6A80
