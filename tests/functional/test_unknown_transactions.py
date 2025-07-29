@@ -108,6 +108,7 @@ def test_sign_transaction_mixed_actions(test_name: str,
             instructions.append(NavInsID.RIGHT_CLICK)
         instructions.append(NavInsID.BOTH_CLICK)
     elif device.type == DeviceType.FLEX:
+        # flex screen wraps requiring additional screen and another tap
         instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 7
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
     else:
@@ -147,3 +148,33 @@ def test_malformed_transfer(test_name: str,
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+
+# Test unknow action without allow unknow actions set
+# Note the navigator does not expect a screen change , and does not wait for instructions to produce one.
+@pytest.mark.parametrize("subdir, transaction_filename", [('wampus','transaction_unknown.json')])
+def test_unknown_action_not_allowed(test_name: str,
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
+    
+    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
+
+    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
+    client = EosClient(backend)
+
+    if device.is_nano:
+        # process initial identifing number of actions
+        instructions = [NavInsID.RIGHT_CLICK]
+    else:
+        instructions = []
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
+                                       snapshot_folder_name,
+                                       instructions,
+                                       screen_change_before_first_instruction=False)
+    rapdu = client.get_async_response()
+    # no change ; nothing presented 
+    assert rapdu.status == 27264
