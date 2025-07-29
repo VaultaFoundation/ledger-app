@@ -42,11 +42,7 @@ unknown_trans = [('wampus','transaction_unknown.json'),
                 ('wampus','transaction_noparams.json'),
                 ('wampus','transaction_nomemo.json')]
 
-# This transaction contains multiples actions which doesn't fit in one APDU.
-# Therefore the app implementation ask the user to validate the action
-# fully contained in the first APDU before answering to it.
-# Therefore we can't use the simple send_async_sign_message() method and we
-# need to do thing more manually.
+# This transaction contains multiples actions which fit in one APDU.
 @pytest.mark.parametrize("transaction_filename", ['transaction_unknown.json'])
 def test_sign_transaction_multiple_actions(test_name,
                                     device,
@@ -73,11 +69,9 @@ def test_sign_transaction_multiple_actions(test_name,
     rapdu = client.get_async_response()
     assert rapdu.status == 0x6A80
 
-# This transaction contains multiples actions which doesn't fit in one APDU.
+# This transaction contains multiples actions which fit in one APDU.
 # first transaction is known and good
 # second transaction is unknown 
-# Therefore we can't use the simple send_async_sign_message() method and we
-# need to do thing more manually.
 @pytest.mark.parametrize("transaction_filename", ['mixed_transactions_known_unknown.json'])
 def test_sign_transaction_mixed_actions(test_name: str,
                                     device: Device,
@@ -122,6 +116,38 @@ def test_sign_transaction_mixed_actions(test_name: str,
                                        instructions)
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
+
+# This transaction contains multiples actions which fit in one APDU.
+# first transaction is known and good
+# second transaction is unknown 
+# reject both; cancel transaction 
+@pytest.mark.parametrize("transaction_filename", ['mixed_transactions_known_unknown.json'])
+def test_sign_mixed_actions_unknown_not_allowed(test_name: str,
+                                    device: Device,
+                                    backend: BackendInterface,
+                                    scenario_navigator: NavigateWithScenario,
+                                    transaction_filename: str):
+
+    snapshot_folder_name = test_name + "/" + transaction_filename.replace(".json", "")
+
+    _, message = load_transaction_from_file(transaction_filename)
+    client = EosClient(backend)
+    payload = pack_derivation_path(VAULTA_PATH) + message
+    messages = split_message(payload, MAX_CHUNK_SIZE)
+
+    if device.is_nano:
+        # process initial identifing number of actions
+        instructions = [NavInsID.RIGHT_CLICK]
+    else:
+        instructions = []
+
+    with client.send_async_sign_message_full(messages[0], True):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
+                                       snapshot_folder_name,
+                                       instructions)
+    rapdu = client.get_async_response()
+    assert rapdu.status != STATUS_OK
 
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
 def test_malformed_transfer(test_name: str,
