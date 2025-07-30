@@ -89,7 +89,7 @@ void ui_idle(void) {
 
 UX_STEP_NOCB(ux_abort_flow_1_step,
              nn,  // pnn,
-             {"Aborting: Detected","Unknown Trx"});
+             {"Aborting: Detected", "Unknown Trx"});
 
 UX_FLOW(ux_abort_flow,
         &ux_abort_flow_1_step,
@@ -105,7 +105,6 @@ void ui_abort_unknown_action(void) {
 
     ux_flow_init(0, ux_abort_flow, NULL);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 

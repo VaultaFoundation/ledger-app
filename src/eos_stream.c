@@ -52,7 +52,6 @@
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
 
-
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
                    cx_sha256_t *dataSha256,
@@ -782,7 +781,7 @@ static void processActionData(txProcessingContext_t *context) {
             processNoOperation(context);
 
         } else if (context->contractActionName == TOKEN_TRANSFER_ACTION &&
-                    (context->contractName == EOSIO_TOKEN || context->contractName == CORE_VAULTA)) {
+                   (context->contractName == EOSIO_TOKEN || context->contractName == CORE_VAULTA)) {
             processTokenTransfer(context);
 
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
