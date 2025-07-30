@@ -145,7 +145,7 @@ class Action:
             encoder.update(parameters)
 
 class NoOp(Action):
-    def encode_action_parameters(self, data):
+    def encode_action_parameters(self, data):  # pylint: disable=unused-argument
         return None
 
 class TransferAction(Action):
@@ -254,7 +254,7 @@ class DelegateAction(Action):
 
 
 class UnknownAction(Action):
-    # requires hex_data unable to parse unknown 
+    # requires hex_data unable to parse unknown
     def encode_action_parameters(self, data):
         pass
 
