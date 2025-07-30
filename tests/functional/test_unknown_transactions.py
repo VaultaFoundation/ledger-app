@@ -67,7 +67,8 @@ def test_sign_transaction_multiple_actions(test_name,
                                        folder_name,
                                        instructions)
     rapdu = client.get_async_response()
-    assert rapdu.status == 0x6A80
+    # assert stream fault , unknown actions not allowed
+    assert rapdu.status == 0x6987
 
 # This transaction contains multiples actions which fit in one APDU.
 # first transaction is known and good
@@ -130,24 +131,31 @@ def test_sign_mixed_actions_unknown_not_allowed(test_name: str,
 
     snapshot_folder_name = test_name + "/" + transaction_filename.replace(".json", "")
 
-    _, message = load_transaction_from_file(transaction_filename)
+    signing_digest, message = load_transaction_from_file(transaction_filename)
     client = EosClient(backend)
-    payload = pack_derivation_path(VAULTA_PATH) + message
-    messages = split_message(payload, MAX_CHUNK_SIZE)
 
     if device.is_nano:
         # process initial identifing number of actions
-        instructions = [NavInsID.RIGHT_CLICK]
+        instructions = [NavInsID.RIGHT_CLICK] * 2
+        instructions.append(NavInsID.BOTH_CLICK)
+        # process first transaction 
+        for i in range(6):
+            instructions.append(NavInsID.RIGHT_CLICK)
+        instructions.append(NavInsID.BOTH_CLICK)
+    elif device.type == DeviceType.FLEX:
+        # flex screen wraps requiring additional screen and another tap
+        instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 4
     else:
-        instructions = []
+        instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 3
 
-    with client.send_async_sign_message_full(messages[0], True):
+    with client.send_async_sign_message(VAULTA_PATH, message):
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
                                        snapshot_folder_name,
                                        instructions)
     rapdu = client.get_async_response()
-    assert rapdu.status != STATUS_OK
+    # assert stream fault , unknown actions not allowed
+    assert rapdu.status == 0x6987
 
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
 def test_malformed_transfer(test_name: str,
@@ -203,4 +211,4 @@ def test_unknown_action_not_allowed(test_name: str,
                                        screen_change_before_first_instruction=False)
     rapdu = client.get_async_response()
     # no change ; nothing presented 
-    assert rapdu.status == 27264
+    assert rapdu.status == 0x6987

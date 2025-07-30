@@ -28,6 +28,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
                 case STREAM_ACTION_READY:
                 case STREAM_PROCESSING:
                 case STREAM_FAULT:
+                case STREAM_NOT_ALLOWED:
                     return 0;
             }
 

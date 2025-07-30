@@ -9,6 +9,7 @@ from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
+from ragger.error import ExceptionRAPDU
 from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
@@ -42,6 +43,26 @@ transactions = [
 
 refused_trans = [('eosio','transaction_refused.json'),('vaulta','transaction_refused.json')]
 
+# special instructions for unknow actions 
+def handle_unknown_action(device, client, message, scenario_navigator, folder_name):
+    try:
+        with client.send_async_sign_message(VAULTA_PATH, message):
+            scenario_navigator.navigator.navigate_and_compare(
+                ROOT_SCREENSHOT_PATH,
+                folder_name,
+                [],
+                screen_change_before_first_instruction=False
+            )
+            rapdu = client.get_async_response()
+    except ExceptionRAPDU as error:
+        # Error [0x6987] - unknown action not allowed
+        print(f"Caught ExceptionRAPDU: {error.status}")
+        assert error.status == 0x6987
+        rapdu = None  # or set some fallback
+
+    # assert the error and exception occured
+    assert rapdu is None
+
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out parameterized tests accepts a list of tuples
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
@@ -57,6 +78,12 @@ def test_sign_transaction_accepted(test_name: str,
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
 
+    # Unknown Actions: not allowed handle separetly 
+    if subdir == 'wampus' and transaction_filename == 'transaction_valid.json':
+        handle_unknown_action(device, client, message, scenario_navigator, folder_name)
+        return
+
+    # Known Actions Contineu
     if device.is_nano:
         end_text = "^Sign$"
     else:

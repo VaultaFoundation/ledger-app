@@ -100,6 +100,12 @@ void user_action_sign_flow_ok(void) {
             io_exchange_with_code(0x9000, sign_hash_and_set_result());
             ui_display_action_sign_done(STREAM_FINISHED, true);
             break;
+        case STREAM_NOT_ALLOWED:
+            // unknown transaction not allowed
+            io_exchange_with_code(0x6987, 0);
+            // Display back the original UX
+            ui_abort_unknown_action();
+            break;
         default:
             io_exchange_with_code(0x6A80, 0);
             // Display back the original UX
@@ -331,6 +337,10 @@ uint32_t handleSign(uint8_t p1,
             break;
         case STREAM_FAULT:
             return 0x6A80;
+        case STREAM_NOT_ALLOWED:
+            /* unknown transaction not allowed */
+            ui_abort_unknown_action();
+            return 0x6987;
         default:
             PRINTF("Unexpected parser status\n");
             return 0x6A80;

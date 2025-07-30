@@ -84,6 +84,15 @@ void ui_idle(void) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void ui_abort_unknown_action(void) {
+    nbgl_useCaseStatus (
+        "Aborted: Detected Unknown Transaction\n\nChange Settings To Allow",
+         false, 
+         ui_idle);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 static void display_address_callback(bool confirm) {
     if (confirm) {
         user_action_address_ok();

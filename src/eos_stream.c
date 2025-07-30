@@ -29,6 +29,7 @@
 /* CONTRACT OWNERS */
 #define CORE_VAULTA 0x452EA06CDA8E4C00
 #define EOSIO       0x5530EA0000000000
+#define EOSIO_TOKEN 0x5530EA033482A600
 /* Allow no-op signing requests from trusted account */
 #define NULL_VAULTA 0x9EA3106CDA8E4C00
 
@@ -49,6 +50,8 @@
 #define LINK_AUTH_ACTION   0x8BA7036B2D000000
 #define UNLINK_AUTH_ACTION 0xD4E2E9C0DACB4000
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
+#define NOOP_ACTION        0x9D29500000000000
+
 
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
@@ -310,18 +313,18 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    if (actionName == TOKEN_TRANSFER_ACTION && isTransferDataValid(bufferLength)) {
-        parseTokenTransfer(buffer, bufferLength, argNum, arg);
+    /* *
+     * Actions from trusted account do not change on-chain state
+     * These actions are used to set authorization for future on-chain transactions
+     * */
+    if (actionName == NOOP_ACTION && contractName == NULL_VAULTA) {
+        parseNoOperation(bufferLength, arg);
         return;
     }
 
-    /* *
-     * Actions from trusted account do not change on-chain state
-     * These actions are used to validate identity 
-     * or set authorization for future on-chain transaction
-     * */
-    if (contractName == NULL_VAULTA) {
-        parseNoOperation(bufferLength, arg);
+    if (actionName == TOKEN_TRANSFER_ACTION && 
+        (contractName == EOSIO_TOKEN || contractName == CORE_VAULTA)) {
+        parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
     }
 
@@ -387,16 +390,16 @@ static bool isKnownAction(txProcessingContext_t *context) {
         return true;
     }
 
-    if (actionName == TOKEN_TRANSFER_ACTION && isTransferDataValid(context->currentFieldLength)) {
+    /* *
+     * Actions from trusted account do not change on-chain state
+     * These actions are used to set authorization for future on-chain transactions
+     * */
+    if (actionName == NOOP_ACTION && contractName == NULL_VAULTA) {
         return true;
     }
 
-    /* *
-     * Actions from trusted account do not change on-chain state
-     * These actions are used to validate identity 
-     * or set authorization for future on-chain transaction
-     * */
-    if (contractName == NULL_VAULTA) {
+    if (actionName == TOKEN_TRANSFER_ACTION && 
+        (contractName == EOSIO_TOKEN || contractName == CORE_VAULTA)) {
         return true;
     }
 
@@ -773,12 +776,14 @@ static void processActionData(txProcessingContext_t *context) {
             context->contractName == CORE_VAULTA) {
             processTokenTransfer(context);
 
-        } else if (context->contractActionName == TOKEN_TRANSFER_ACTION) {
-            processTokenTransfer(context);
-
         // no args or data expected
-        } else if (context->contractName == NULL_VAULTA) {
+        } else if (context->contractActionName == NOOP_ACTION &&
+                   context->contractName == NULL_VAULTA) {
             processNoOperation(context);
+
+        } else if (context->contractActionName == TOKEN_TRANSFER_ACTION && 
+                (context->contractName == EOSIO_TOKEN || context->contractName == CORE_VAULTA)) {
+            processTokenTransfer(context);
 
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {
             switch (context->contractActionName) {
@@ -937,7 +942,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                     processUnknownActionData(context);
                 } else {
                     PRINTF("UNKNOWN ACTION");
-                    return STREAM_FAULT;
+                    return STREAM_NOT_ALLOWED;
                 }
                 break;
 

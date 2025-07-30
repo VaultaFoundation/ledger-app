@@ -85,6 +85,31 @@ void ui_idle(void) {
     ux_flow_init(0, ux_idle_flow, NULL);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+UX_STEP_NOCB(ux_abort_flow_1_step,
+             nn,  // pnn,
+             {
+                "Aborting: Detected",
+                "Unknown Trx"
+             });
+
+UX_FLOW(ux_abort_flow,
+        &ux_abort_flow_1_step,
+        &ux_idle_flow_2_step,
+        &ux_idle_flow_3_step,
+        &ux_idle_flow_4_step);
+
+void ui_abort_unknown_action(void) {
+    // reserve a display stack slot if none yet
+    if (G_ux.stack_count == 0) {
+        ux_stack_push();
+    }
+
+    ux_flow_init(0, ux_abort_flow, NULL);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 UX_STEP_CB(ux_settings_flow_1_step,
