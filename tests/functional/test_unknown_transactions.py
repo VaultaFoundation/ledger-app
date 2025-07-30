@@ -11,9 +11,9 @@ from ragger.navigator.navigation_scenario import NavigateWithScenario
 from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
 from test_sign_cmd import get_nano_review_instructions
 
-from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
+from apps.eos import EosClient, STATUS_OK, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
-from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR, TAGGED_CORPUS_FILES
+from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR
 # Proposed EOS derivation paths for tests ###
 VAULTA_PATH = "m/44'/194'/12345'"
 
@@ -33,10 +33,10 @@ def assemble_snapshot_folder_name(test_name, subdir, transaction_filename):
         folder_name = test_name +"/"+ subdir +"/"+ transaction_filename.replace(".json", "")
     else:
         folder_name = test_name +"/"+ transaction_filename.replace(".json", "")
-    
+
     return folder_name
 
-# These files are in the corpus 
+# These files are in the corpus
 unknown_trans = [('wampus','transaction_unknown.json'),
                 ('wampus','transaction_badparam.json'),
                 ('wampus','transaction_noparams.json'),
@@ -72,7 +72,7 @@ def test_sign_transaction_multiple_actions(test_name,
 
 # This transaction contains multiples actions which fit in one APDU.
 # first transaction is known and good
-# second transaction is unknown 
+# second transaction is unknown
 @pytest.mark.parametrize("transaction_filename", ['mixed_transactions_known_unknown.json'])
 def test_sign_transaction_mixed_actions(test_name: str,
                                     device: Device,
@@ -80,7 +80,7 @@ def test_sign_transaction_mixed_actions(test_name: str,
                                     scenario_navigator: NavigateWithScenario,
                                     transaction_filename: str):
 
-    # Allow Unknow Actions: navigate and turn on settings 
+    # Allow Unknown Actions: navigate and turn on settings
     test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
 
     snapshot_folder_name = test_name + "/" + transaction_filename.replace(".json", "")
@@ -91,16 +91,14 @@ def test_sign_transaction_mixed_actions(test_name: str,
     messages = split_message(payload, MAX_CHUNK_SIZE)
 
     if device.is_nano:
-        # process initial identifing number of actions
+        # process initial identifying number of actions
         instructions = [NavInsID.RIGHT_CLICK] * 2
         instructions.append(NavInsID.BOTH_CLICK)
-        # process first transaction 
-        for i in range(6):
-            instructions.append(NavInsID.RIGHT_CLICK)
+        # process first transaction
+        instructions += [NavInsID.RIGHT_CLICK] *6
         instructions.append(NavInsID.BOTH_CLICK)
-        # process second transaction 
-        for i in range(6):
-            instructions.append(NavInsID.RIGHT_CLICK)
+        # process second transaction
+        instructions += [NavInsID.RIGHT_CLICK] *6
         instructions.append(NavInsID.BOTH_CLICK)
     elif device.type == DeviceType.FLEX:
         # flex screen wraps requiring additional screen and another tap
@@ -120,8 +118,8 @@ def test_sign_transaction_mixed_actions(test_name: str,
 
 # This transaction contains multiples actions which fit in one APDU.
 # first transaction is known and good
-# second transaction is unknown 
-# reject both; cancel transaction 
+# second transaction is unknown
+# reject both; cancel transaction
 @pytest.mark.parametrize("transaction_filename", ['mixed_transactions_known_unknown.json'])
 def test_sign_mixed_actions_unknown_not_allowed(test_name: str,
                                     device: Device,
@@ -131,16 +129,15 @@ def test_sign_mixed_actions_unknown_not_allowed(test_name: str,
 
     snapshot_folder_name = test_name + "/" + transaction_filename.replace(".json", "")
 
-    signing_digest, message = load_transaction_from_file(transaction_filename)
+    _, message = load_transaction_from_file(transaction_filename)
     client = EosClient(backend)
 
     if device.is_nano:
-        # process initial identifing number of actions
+        # process initial identifying number of actions
         instructions = [NavInsID.RIGHT_CLICK] * 2
         instructions.append(NavInsID.BOTH_CLICK)
-        # process first transaction 
-        for i in range(6):
-            instructions.append(NavInsID.RIGHT_CLICK)
+        # process first transaction
+        instructions += [NavInsID.RIGHT_CLICK] * 6
         instructions.append(NavInsID.BOTH_CLICK)
     elif device.type == DeviceType.FLEX:
         # flex screen wraps requiring additional screen and another tap
@@ -165,7 +162,7 @@ def test_malformed_transfer(test_name: str,
                             subdir: str,
                             transaction_filename: str):
 
-    # Allow Unknow Actions: navigate and turn on settings 
+    # Allow Unknow Actions: navigate and turn on settings
     test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
 
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
@@ -183,7 +180,7 @@ def test_malformed_transfer(test_name: str,
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
-# Test unknow action without allow unknow actions set
+# Test Unknown action without allow Unknown actions set
 # Note the navigator does not expect a screen change , and does not wait for instructions to produce one.
 @pytest.mark.parametrize("subdir, transaction_filename", [('wampus','transaction_unknown.json')])
 def test_unknown_action_not_allowed(test_name: str,
@@ -192,14 +189,14 @@ def test_unknown_action_not_allowed(test_name: str,
                             scenario_navigator: NavigateWithScenario,
                             subdir: str,
                             transaction_filename: str):
-    
+
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
 
-    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
+    _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
 
     if device.is_nano:
-        # process initial identifing number of actions
+        # process initial identifying number of actions
         instructions = [NavInsID.RIGHT_CLICK]
     else:
         instructions = []
@@ -210,5 +207,5 @@ def test_unknown_action_not_allowed(test_name: str,
                                        instructions,
                                        screen_change_before_first_instruction=False)
     rapdu = client.get_async_response()
-    # no change ; nothing presented 
+    # no change ; nothing presented
     assert rapdu.status == 0x6987

@@ -85,10 +85,9 @@ void ui_idle(void) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void ui_abort_unknown_action(void) {
-    nbgl_useCaseStatus (
-        "Aborted: Detected Unknown Transaction\n\nChange Settings To Allow",
-         false, 
-         ui_idle);
+    nbgl_useCaseStatus ("Aborted: Detected Unknown Transaction\n\nChange Settings To Allow",
+                        false, 
+                        ui_idle);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

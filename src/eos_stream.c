@@ -322,7 +322,7 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
         return;
     }
 
-    if (actionName == TOKEN_TRANSFER_ACTION && 
+    if (actionName == TOKEN_TRANSFER_ACTION &&
         (contractName == EOSIO_TOKEN || contractName == CORE_VAULTA)) {
         parseTokenTransfer(buffer, bufferLength, argNum, arg);
         return;
@@ -398,7 +398,7 @@ static bool isKnownAction(txProcessingContext_t *context) {
         return true;
     }
 
-    if (actionName == TOKEN_TRANSFER_ACTION && 
+    if (actionName == TOKEN_TRANSFER_ACTION &&
         (contractName == EOSIO_TOKEN || contractName == CORE_VAULTA)) {
         return true;
     }
@@ -776,13 +776,13 @@ static void processActionData(txProcessingContext_t *context) {
             context->contractName == CORE_VAULTA) {
             processTokenTransfer(context);
 
-        // no args or data expected
+            // no args or data expected
         } else if (context->contractActionName == NOOP_ACTION &&
                    context->contractName == NULL_VAULTA) {
             processNoOperation(context);
 
-        } else if (context->contractActionName == TOKEN_TRANSFER_ACTION && 
-                (context->contractName == EOSIO_TOKEN || context->contractName == CORE_VAULTA)) {
+        } else if (context->contractActionName == TOKEN_TRANSFER_ACTION &&
+                    (context->contractName == EOSIO_TOKEN || context->contractName == CORE_VAULTA)) {
             processTokenTransfer(context);
 
         } else if (context->contractName == EOSIO || context->contractName == CORE_VAULTA) {

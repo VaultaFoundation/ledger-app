@@ -14,7 +14,7 @@
         "name": "noop",
         "authorization": [
           {
-            "actor": "usera",
+            "actor": "alicetest123",
             "permission": "active"
           }
         ],

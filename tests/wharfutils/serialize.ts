@@ -85,7 +85,7 @@ const transactionData = extractTransactionOrAll(rawTransactionData)
 if (transactionData && Array.isArray(transactionData.actions)) {
   for (const action of transactionData.actions) {
     // sometimes hex_data is already provided
-    // usefull if we want to specify exact bytes to test edge cases
+    // useful if we want to specify exact bytes to test edge cases
     // if not provided we need to create it
     if (!("hex_data" in action)) {
       // no data at all -> empty bytes

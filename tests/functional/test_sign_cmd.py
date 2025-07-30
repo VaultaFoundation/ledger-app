@@ -1,4 +1,3 @@
-from hashlib import sha256
 from json import load
 import pytest
 
@@ -10,7 +9,6 @@ from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 from ragger.error import ExceptionRAPDU
-from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
 
 from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
@@ -43,8 +41,8 @@ transactions = [
 
 refused_trans = [('eosio','transaction_refused.json'),('vaulta','transaction_refused.json')]
 
-# special instructions for unknow actions 
-def handle_unknown_action(device, client, message, scenario_navigator, folder_name):
+# special instructions for unknown actions
+def handle_unknown_action(client, message, scenario_navigator, folder_name):
     try:
         with client.send_async_sign_message(VAULTA_PATH, message):
             scenario_navigator.navigator.navigate_and_compare(
@@ -60,7 +58,7 @@ def handle_unknown_action(device, client, message, scenario_navigator, folder_na
         assert error.status == 0x6987
         rapdu = None  # or set some fallback
 
-    # assert the error and exception occured
+    # assert the error and exception occurred
     assert rapdu is None
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
@@ -78,12 +76,12 @@ def test_sign_transaction_accepted(test_name: str,
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
 
-    # Unknown Actions: not allowed handle separetly 
+    # Unknown Actions: not allowed handle separately
     if subdir == 'wampus' and transaction_filename == 'transaction_valid.json':
-        handle_unknown_action(device, client, message, scenario_navigator, folder_name)
+        handle_unknown_action(client, message, scenario_navigator, folder_name)
         return
 
-    # Known Actions Contineu
+    # Known Actions Continue
     if device.is_nano:
         end_text = "^Sign$"
     else:
