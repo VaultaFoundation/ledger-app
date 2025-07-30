@@ -1,5 +1,4 @@
-ragger[tests,all_backends]
-speculos==0.21.2
+ragger[tests,speculos] >= 1.36.1
 base58
 bip_utils
 pycoin
