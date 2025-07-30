@@ -162,7 +162,7 @@ def test_malformed_transfer(test_name: str,
                             subdir: str,
                             transaction_filename: str):
 
-    # Allow Unknow Actions: navigate and turn on settings
+    # Allow Unknown Actions: navigate and turn on settings
     test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
 
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
