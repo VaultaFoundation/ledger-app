@@ -8,7 +8,7 @@ from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
-from test_app_mainmenu_settings_cfg import test_app_mainmenu_settings_cfg
+from test_app_mainmenu_settings_cfg import run_app_mainmenu_settings_cfg
 from test_sign_cmd import get_nano_review_instructions
 
 from apps.eos import EosClient, STATUS_OK, MAX_CHUNK_SIZE
@@ -73,19 +73,18 @@ def test_sign_transaction_multiple_actions(test_name,
 # This transaction contains multiples actions which fit in one APDU.
 # first transaction is known and good
 # second transaction is unknown
-@pytest.mark.parametrize("transaction_filename", ['mixed_transactions_known_unknown.json'])
-def test_sign_transaction_mixed_actions(test_name: str,
+def process_transaction_with_mixed_actions(test_name: str,
                                     device: Device,
                                     backend: BackendInterface,
                                     scenario_navigator: NavigateWithScenario,
-                                    transaction_filename: str):
+                                    subdir,
+                                    transaction_filename: str,
+                                    act1_arg_count=1,
+                                    act2_arg_count=1):
 
-    # Allow Unknown Actions: navigate and turn on settings
-    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator,"")
+    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir, transaction_filename) 
 
-    snapshot_folder_name = test_name + "/" + transaction_filename.replace(".json", "")
-
-    _, message = load_transaction_from_file(transaction_filename)
+    _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
     payload = pack_derivation_path(VAULTA_PATH) + message
     messages = split_message(payload, MAX_CHUNK_SIZE)
@@ -95,17 +94,19 @@ def test_sign_transaction_mixed_actions(test_name: str,
         instructions = [NavInsID.RIGHT_CLICK] * 2
         instructions.append(NavInsID.BOTH_CLICK)
         # process first transaction
-        instructions += [NavInsID.RIGHT_CLICK] *6
+        instructions += [NavInsID.RIGHT_CLICK] * (3 + act1_arg_count)
         instructions.append(NavInsID.BOTH_CLICK)
         # process second transaction
-        instructions += [NavInsID.RIGHT_CLICK] *6
+        instructions += [NavInsID.RIGHT_CLICK] * (3 + act2_arg_count)
         instructions.append(NavInsID.BOTH_CLICK)
     elif device.type == DeviceType.FLEX:
         # flex screen wraps requiring additional screen and another tap
-        instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 7
+        taps = 3 + (act1_arg_count + 1) // 2 + (act2_arg_count + 1) // 2
+        instructions = [NavInsID.USE_CASE_REVIEW_TAP] * taps
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
     else:
-        instructions = [NavInsID.USE_CASE_REVIEW_TAP] * 6
+        taps = 3 + (act1_arg_count) // 2 + (act2_arg_count) // 2
+        instructions = [NavInsID.USE_CASE_REVIEW_TAP] * taps
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
 
     with client.send_async_sign_message_full(messages[0], True):
@@ -115,6 +116,20 @@ def test_sign_transaction_mixed_actions(test_name: str,
                                        instructions)
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
+
+@pytest.mark.parametrize("transaction_filename", ['mixed_transactions_known_unknown.json'])
+def test_sign_transaction_mixed_actions(test_name: str,
+                                    device: Device,
+                                    backend: BackendInterface,
+                                    scenario_navigator: NavigateWithScenario,
+                                    transaction_filename: str):
+
+    # Allow Unknown Actions: navigate and turn on settings
+    run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+    action_one_args = 3 # buyram
+    action_two_args = 3 # unknown 
+    process_transaction_with_mixed_actions(test_name, device, backend, scenario_navigator, None, transaction_filename,action_one_args,action_two_args)
+
 
 # This transaction contains multiples actions which fit in one APDU.
 # first transaction is known and good
@@ -163,7 +178,7 @@ def test_malformed_transfer(test_name: str,
                             transaction_filename: str):
 
     # Allow Unknown Actions: navigate and turn on settings
-    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator,"")
+    run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
 
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
 

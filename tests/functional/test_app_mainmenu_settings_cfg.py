@@ -40,7 +40,7 @@ def _verify_version(version: str) -> None:
         pass
     assert version == vers_str
 
-def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name="test_app_mainmenu_settings_cfg"):
+def run_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
     client = EosClient(backend)
 
     # Get appversion and "data_allowed parameter"
@@ -103,3 +103,6 @@ def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name="test_a
         assert unknown_allowed is True
         assert is_verbose is True
         _verify_version(version)
+
+def test_app_mainmenu_settings_cfg(device, backend, navigator):
+    run_app_mainmenu_settings_cfg(device, backend, navigator, "test_app_mainmenu_settings_cfg")

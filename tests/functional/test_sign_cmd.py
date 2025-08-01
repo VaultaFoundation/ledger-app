@@ -63,8 +63,7 @@ def handle_unknown_action(client, message, scenario_navigator, folder_name):
 
 # TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
 # out parameterized tests accepts a list of tuples
-@pytest.mark.parametrize("subdir, transaction_filename", transactions)
-def test_sign_transaction_accepted(test_name: str,
+def run_sign_transaction(test_name: str,
                                    device: Device,
                                    backend: BackendInterface,
                                    scenario_navigator: NavigateWithScenario,
@@ -92,6 +91,14 @@ def test_sign_transaction_accepted(test_name: str,
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
+@pytest.mark.parametrize("subdir, transaction_filename", transactions)
+def test_sign_transaction_accepted(test_name: str,
+                                   device: Device,
+                                   backend: BackendInterface,
+                                   scenario_navigator: NavigateWithScenario,
+                                   subdir: str,
+                                   transaction_filename: str):
+    run_sign_transaction(test_name, device, backend, scenario_navigator, subdir, transaction_filename)
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
 def test_sign_transaction_refused(test_name: str,
