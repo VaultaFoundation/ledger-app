@@ -200,10 +200,11 @@ uint32_t handleGetAppConfiguration(uint8_t p1,
     UNUSED(dataLength);
     UNUSED(flags);
     G_io_apdu_buffer[0] = (is_unknown_action_allowed() ? 0x01 : 0x00);
-    G_io_apdu_buffer[1] = MAJOR_VERSION;
-    G_io_apdu_buffer[2] = MINOR_VERSION;
-    G_io_apdu_buffer[3] = PATCH_VERSION;
-    *tx = 4;
+    G_io_apdu_buffer[1] = (is_verbose() ? 0x01 : 0x00);
+    G_io_apdu_buffer[2] = MAJOR_VERSION;
+    G_io_apdu_buffer[3] = MINOR_VERSION;
+    G_io_apdu_buffer[4] = PATCH_VERSION;
+    *tx = 5;
     return SWO_SUCCESS;
 }
 

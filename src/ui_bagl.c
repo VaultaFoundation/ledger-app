@@ -29,6 +29,7 @@
 
 static char actionCounter[32];
 static char confirmLabel[32];
+static char smallConfirmLabel[16];
 
 // display stepped screens
 static unsigned int ux_step;
@@ -37,32 +38,42 @@ static unsigned int ux_step_count;
 static char confirm_text1[16];
 static char confirm_text2[16];
 
-static void display_settings(void);
+static void display_settings_flow(void);
 static void switch_settings_contract_data(void);
+static void switch_settings_verbose_config(void);
 static void display_next_state(uint8_t state);
 
+static void maybe_push_stack(void);
+
+///////////////////////////COMMON FUNCTIONS////////////////////////////
+static void maybe_push_stack(void) {
+    // reserve a display stack slot if none yet
+    if (G_ux.stack_count == 0) {
+        ux_stack_push();
+    }
+}
 ///////////////////////////////////////////////////////////////////////////////
 
-UX_STEP_NOCB(ux_idle_flow_1_step,
+UX_STEP_NOCB(ux_idle_ready_step,
              nn,  // pnn,
              {
                  "Application",
                  "is ready",
              });
-UX_STEP_NOCB(ux_idle_flow_2_step,
+UX_STEP_NOCB(ux_display_version_step,
              bn,
              {
                  "Version",
                  APPVERSION,
              });
-UX_STEP_CB(ux_idle_flow_3_step,
+UX_STEP_CB(ux_settings_step,
            pb,
-           display_settings(),
+           display_settings_flow(),
            {
                &C_icon_coggle,
                "Settings",
            });
-UX_STEP_CB(ux_idle_flow_4_step,
+UX_STEP_CB(ux_quit_step,
            pb,
            os_sched_exit(-1),
            {
@@ -71,37 +82,33 @@ UX_STEP_CB(ux_idle_flow_4_step,
            });
 
 UX_FLOW(ux_idle_flow,
-        &ux_idle_flow_1_step,
-        &ux_idle_flow_2_step,
-        &ux_idle_flow_3_step,
-        &ux_idle_flow_4_step);
+        &ux_idle_ready_step,
+        &ux_display_version_step,
+        &ux_settings_step,
+        &ux_quit_step);
 
 void ui_idle(void) {
     // reserve a display stack slot if none yet
-    if (G_ux.stack_count == 0) {
-        ux_stack_push();
-    }
+    maybe_push_stack();
 
     ux_flow_init(0, ux_idle_flow, NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-UX_STEP_NOCB(ux_abort_flow_1_step,
-             nn,  // pnn,
-             {"Aborting: Detected", "Unknown Trx"});
+UX_STEP_NOCB(ux_abort_warning_step,
+             bnn,  // pnn,
+             {"Aborting", "Detected", "Unknown Trx"});
 
 UX_FLOW(ux_abort_flow,
-        &ux_abort_flow_1_step,
-        &ux_idle_flow_2_step,
-        &ux_idle_flow_3_step,
-        &ux_idle_flow_4_step);
+        &ux_abort_warning_step,
+        &ux_display_version_step,
+        &ux_display_version_step,
+        &ux_quit_step);
 
 void ui_abort_unknown_action(void) {
     // reserve a display stack slot if none yet
-    if (G_ux.stack_count == 0) {
-        ux_stack_push();
-    }
+    maybe_push_stack();
 
     ux_flow_init(0, ux_abort_flow, NULL);
 }
@@ -119,6 +126,16 @@ UX_STEP_CB(ux_settings_flow_1_step,
            });
 
 UX_STEP_CB(ux_settings_flow_2_step,
+           bnnn,
+           switch_settings_verbose_config(),
+           {
+               "Verbose",
+               "Show Details",
+               "in transactions",
+               smallConfirmLabel,
+           });
+
+UX_STEP_CB(ux_settings_flow_3_step,
            pb,
            ui_idle(),
            {
@@ -126,18 +143,29 @@ UX_STEP_CB(ux_settings_flow_2_step,
                "Back",
            });
 
-UX_FLOW(ux_settings_flow, &ux_settings_flow_1_step, &ux_settings_flow_2_step);
+UX_FLOW(ux_settings_flow,
+        &ux_settings_flow_1_step,
+        &ux_settings_flow_2_step,
+        &ux_settings_flow_3_step);
 
-static void display_settings(void) {
+static void display_settings_flow(void) {
     strlcpy(confirmLabel,
             (is_unknown_action_allowed() ? "Allowed" : "NOT Allowed"),
             sizeof(confirmLabel));
+
+    strlcpy(smallConfirmLabel, (is_verbose() ? "On" : "Off"), sizeof(smallConfirmLabel));
+
     ux_flow_init(0, ux_settings_flow, NULL);
 }
 
 static void switch_settings_contract_data(void) {
     toogle_unknown_action_allowed();
-    display_settings();
+    display_settings_flow();
+}
+
+static void switch_settings_verbose_config(void) {
+    toogle_verbose_config();
+    display_settings_flow();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

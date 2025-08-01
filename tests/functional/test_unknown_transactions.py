@@ -81,7 +81,7 @@ def test_sign_transaction_mixed_actions(test_name: str,
                                     transaction_filename: str):
 
     # Allow Unknown Actions: navigate and turn on settings
-    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator,"")
 
     snapshot_folder_name = test_name + "/" + transaction_filename.replace(".json", "")
 
@@ -163,7 +163,7 @@ def test_malformed_transfer(test_name: str,
                             transaction_filename: str):
 
     # Allow Unknown Actions: navigate and turn on settings
-    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+    test_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator,"")
 
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
 

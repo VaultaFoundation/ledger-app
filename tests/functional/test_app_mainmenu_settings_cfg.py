@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 from ragger.backend import SpeculosBackend
 from ragger.navigator import NavInsID, NavIns
+from ledgered.devices import DeviceType
 
 from apps.eos import EosClient
 from utils import ROOT_SCREENSHOT_PATH
@@ -39,13 +40,12 @@ def _verify_version(version: str) -> None:
         pass
     assert version == vers_str
 
-
-def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
+def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name="test_app_mainmenu_settings_cfg"):
     client = EosClient(backend)
 
     # Get appversion and "data_allowed parameter"
     # This works on both the emulator and a physical device
-    unknown_allowed, version = client.send_get_app_configuration()
+    unknown_allowed, is_verbose, version = client.send_get_app_configuration()
     assert unknown_allowed is False
     _verify_version(version)
 
@@ -63,16 +63,32 @@ def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
                 NavInsID.RIGHT_CLICK,
                 NavInsID.LEFT_CLICK,
                 NavInsID.BOTH_CLICK,
+                NavInsID.RIGHT_CLICK,
                 NavInsID.BOTH_CLICK,
                 NavInsID.RIGHT_CLICK,
+                NavInsID.LEFT_CLICK,
+                NavInsID.BOTH_CLICK,
+                NavInsID.RIGHT_CLICK,
+                NavInsID.RIGHT_CLICK,
                 NavInsID.BOTH_CLICK
+            ]
+        elif device.type == DeviceType.FLEX:
+            instructions = [
+                NavInsID.USE_CASE_HOME_INFO,
+                NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
+                NavInsID.USE_CASE_SETTINGS_NEXT,
+                NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
+                NavInsID.USE_CASE_SETTINGS_PREVIOUS,
+                NavInsID.USE_CASE_SETTINGS_NEXT,
+                NavInsID.USE_CASE_SETTINGS_NEXT,
+                NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
             ]
         else:
             instructions = [
                 NavInsID.USE_CASE_HOME_INFO,
                 NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
+                NavIns(NavInsID.TOUCH, (200, 360)),  # Change setting value
                 NavInsID.USE_CASE_SETTINGS_NEXT,
-                NavInsID.USE_CASE_SETTINGS_PREVIOUS,
                 NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
             ]
         # test_name null means this is a config change event, not a test
@@ -83,6 +99,7 @@ def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
             navigator.navigate(instructions,screen_change_before_first_instruction=False)
 
         # Check that "data_allowed parameter" changed
-        unknown_allowed, version = client.send_get_app_configuration()
+        unknown_allowed, is_verbose, version = client.send_get_app_configuration()
         assert unknown_allowed is True
+        assert is_verbose is True
         _verify_version(version)

@@ -83,7 +83,7 @@ sudo docker run --rm -ti -v "$(pwd -P):/app" --user $(id -u):$(id -g) -v "/tmp/.
 cd /app
 python3 -m venv private_app_env --system-site-packages
 source private_app_env/bin/activate
-speculos build/nanosp/bin/app.elf --model nanosp
+speculos build/nanos2/bin/app.elf --model nanosp
 ```
 
 ## Compilation Options
