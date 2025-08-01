@@ -36,12 +36,12 @@ void config_init(void) {
 }
 
 /*
- * Allow unknown actions 
+ * Allow unknown actions
  * This app contains a fixed list of supported contracts
  * Contracts not matching this list are considered "unknown"
  * This setting allows for review and signing of unknown contracts
- * By default Off 
-*/
+ * By default Off
+ */
 bool is_unknown_action_allowed(void) {
     return N_storage.unknownActionAllowed == 1;
 }
@@ -52,11 +52,11 @@ void toogle_unknown_action_allowed(void) {
 }
 
 /*
- * Show verbose settings 
+ * Show verbose settings
  * Presents null.vaulta actions for review otherwise signed blind
  * Shows checksums on unknown actions
- * Shows authorities on actions 
-*/
+ * Shows authorities on actions
+ */
 bool is_verbose(void) {
     return N_storage.verbose == 1;
 }

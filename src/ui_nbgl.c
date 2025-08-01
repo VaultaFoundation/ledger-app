@@ -39,10 +39,7 @@ static const char* const INFO_TYPES[] = {"Version"};
 static const char* const INFO_CONTENTS[] = {APPVERSION};
 
 #define SWITCH_COUNT 2
-enum {
-    SWITCH_UNKNOWN_ACTION = 0,
-    SWITCH_VERBOSE = 1
-};
+enum { SWITCH_UNKNOWN_ACTION = 0, SWITCH_VERBOSE = 1 };
 #define TOKEN_OFFSET FIRST_USER_TOKEN
 
 static void controlsCallback(int token, uint8_t index, int page) {
@@ -55,7 +52,7 @@ static void controlsCallback(int token, uint8_t index, int page) {
         return;  // Invalid token, do nothing
     }
 
-    switch(switchIndex) {
+    switch (switchIndex) {
         case SWITCH_UNKNOWN_ACTION:
             toogle_unknown_action_allowed();
             switches[SWITCH_UNKNOWN_ACTION].initState = is_unknown_action_allowed();
@@ -68,7 +65,6 @@ static void controlsCallback(int token, uint8_t index, int page) {
 }
 
 void ui_idle(void) {
-
     static nbgl_contentInfoList_t infosList = {0};
     static nbgl_content_t contents[1] = {0};
     static nbgl_genericContents_t settingContents = {0};

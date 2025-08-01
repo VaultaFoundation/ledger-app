@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 from ragger.backend import SpeculosBackend
 from ragger.navigator import NavInsID, NavIns
-from ledgered.devices import DeviceType 
+from ledgered.devices import DeviceType
 
 from apps.eos import EosClient
 from utils import ROOT_SCREENSHOT_PATH
@@ -84,13 +84,13 @@ def test_app_mainmenu_settings_cfg(device, backend, navigator, test_name="test_a
                 NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
             ]
         else:
-             instructions = [
+            instructions = [
                 NavInsID.USE_CASE_HOME_INFO,
                 NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
                 NavIns(NavInsID.TOUCH, (200, 360)),  # Change setting value
                 NavInsID.USE_CASE_SETTINGS_NEXT,
                 NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
-            ]           
+            ]
         # test_name null means this is a config change event, not a test
         if test_name:
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, instructions,

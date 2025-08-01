@@ -98,7 +98,7 @@ void ui_idle(void) {
 
 UX_STEP_NOCB(ux_abort_warning_step,
              bnn,  // pnn,
-             {"Aborting","Detected", "Unknown Trx"});
+             {"Aborting", "Detected", "Unknown Trx"});
 
 UX_FLOW(ux_abort_flow,
         &ux_abort_warning_step,
@@ -143,16 +143,17 @@ UX_STEP_CB(ux_settings_flow_3_step,
                "Back",
            });
 
-UX_FLOW(ux_settings_flow, &ux_settings_flow_1_step, &ux_settings_flow_2_step, &ux_settings_flow_3_step);
+UX_FLOW(ux_settings_flow,
+        &ux_settings_flow_1_step,
+        &ux_settings_flow_2_step,
+        &ux_settings_flow_3_step);
 
 static void display_settings_flow(void) {
     strlcpy(confirmLabel,
             (is_unknown_action_allowed() ? "Allowed" : "NOT Allowed"),
             sizeof(confirmLabel));
 
-    strlcpy(smallConfirmLabel,
-            (is_verbose() ? "On" : "Off"),
-            sizeof(smallConfirmLabel));
+    strlcpy(smallConfirmLabel, (is_verbose() ? "On" : "Off"), sizeof(smallConfirmLabel));
 
     ux_flow_init(0, ux_settings_flow, NULL);
 }
