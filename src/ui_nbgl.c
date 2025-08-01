@@ -34,22 +34,41 @@
 
 void app_exit(void);
 
-static nbgl_contentSwitch_t switches[1] = {0};
+static nbgl_contentSwitch_t switches[2] = {0};
 static const char* const INFO_TYPES[] = {"Version"};
 static const char* const INFO_CONTENTS[] = {APPVERSION};
+
+#define SWITCH_COUNT 2
+enum {
+    SWITCH_UNKNOWN_ACTION = 0,
+    SWITCH_VERBOSE = 1
+};
+#define TOKEN_OFFSET FIRST_USER_TOKEN
 
 static void controlsCallback(int token, uint8_t index, int page) {
     UNUSED(index);
     UNUSED(page);
 
-    if (token != FIRST_USER_TOKEN) {
-        return;
+    int switchIndex = token - TOKEN_OFFSET;
+
+    if (switchIndex < 0 || switchIndex >= SWITCH_COUNT) {
+        return;  // Invalid token, do nothing
     }
-    toogle_unknown_action_allowed();
-    switches[0].initState = is_unknown_action_allowed();
+
+    switch(switchIndex) {
+        case SWITCH_UNKNOWN_ACTION:
+            toogle_unknown_action_allowed();
+            switches[SWITCH_UNKNOWN_ACTION].initState = is_unknown_action_allowed();
+            break;
+        case SWITCH_VERBOSE:
+            toogle_verbose_config();
+            switches[SWITCH_VERBOSE].initState = is_verbose();
+            break;
+    }
 }
 
 void ui_idle(void) {
+
     static nbgl_contentInfoList_t infosList = {0};
     static nbgl_content_t contents[1] = {0};
     static nbgl_genericContents_t settingContents = {0};
@@ -57,10 +76,15 @@ void ui_idle(void) {
     switches[0].initState = is_unknown_action_allowed();
     switches[0].text = "Contract data";
     switches[0].subText = "Allow unknown action in transactions";
-    switches[0].token = FIRST_USER_TOKEN;
+    switches[0].token = TOKEN_OFFSET + SWITCH_UNKNOWN_ACTION;
+
+    switches[1].initState = is_verbose();
+    switches[1].text = "Verbose";
+    switches[1].subText = "Review Null.Vaulta transactions\nShow authorizations\nShow checksums";
+    switches[1].token = TOKEN_OFFSET + SWITCH_VERBOSE;
 
     contents[0].type = SWITCHES_LIST;
-    contents[0].content.switchesList.nbSwitches = 1;
+    contents[0].content.switchesList.nbSwitches = 2;
     contents[0].content.switchesList.switches = switches;
     contents[0].contentActionCallback = controlsCallback;
 

@@ -18,6 +18,7 @@
 
 typedef struct internalStorage_t {
     uint8_t unknownActionAllowed;
+    uint8_t verbose;
     uint8_t initialized;
 } internalStorage_t;
 
@@ -28,11 +29,19 @@ void config_init(void) {
     if (N_storage.initialized != 0x01) {
         internalStorage_t storage;
         storage.unknownActionAllowed = 0x00;
+        storage.verbose = 0x00;
         storage.initialized = 0x01;
         nvm_write((void *) &N_storage, (void *) &storage, sizeof(internalStorage_t));
     }
 }
 
+/*
+ * Allow unknown actions 
+ * This app contains a fixed list of supported contracts
+ * Contracts not matching this list are considered "unknown"
+ * This setting allows for review and signing of unknown contracts
+ * By default Off 
+*/
 bool is_unknown_action_allowed(void) {
     return N_storage.unknownActionAllowed == 1;
 }
@@ -40,4 +49,19 @@ bool is_unknown_action_allowed(void) {
 void toogle_unknown_action_allowed(void) {
     uint8_t value = (is_unknown_action_allowed() ? 0 : 1);
     nvm_write((void *) &N_storage.unknownActionAllowed, (void *) &value, sizeof(uint8_t));
+}
+
+/*
+ * Show verbose settings 
+ * Presents null.vaulta actions for review otherwise signed blind
+ * Shows checksums on unknown actions
+ * Shows authorities on actions 
+*/
+bool is_verbose(void) {
+    return N_storage.verbose == 1;
+}
+
+void toogle_verbose_config(void) {
+    uint8_t value = (is_verbose() ? 0 : 1);
+    nvm_write((void *) &N_storage.verbose, (void *) &value, sizeof(uint8_t));
 }

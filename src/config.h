@@ -22,5 +22,7 @@
 void config_init(void);
 bool is_unknown_action_allowed(void);
 void toogle_unknown_action_allowed(void);
+bool is_verbose(void);
+void toogle_verbose_config(void);
 
 #endif
