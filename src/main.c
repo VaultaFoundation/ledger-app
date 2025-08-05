@@ -309,7 +309,8 @@ uint32_t handleSign(uint8_t p1,
                       &sha256,
                       &dataSha256,
                       &txContent,
-                      is_unknown_action_allowed() ? 0x01 : 0x00);
+                      is_unknown_action_allowed() ? 0x01 : 0x00,
+                      is_verbose() ? 0x01 : 0x00);
     } else if (p1 != P1_MORE) {
         return 0x6B00;
     }

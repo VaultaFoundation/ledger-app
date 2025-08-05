@@ -126,8 +126,12 @@ def test_sign_transaction_mixed_actions(test_name: str,
 
     # Allow Unknown Actions: navigate and turn on settings
     run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
-    action_one_args = 3 # buyram
-    action_two_args = 3 # unknown 
+    if device.is_nano:
+        action_one_args = 3 # buyram
+        action_two_args = 3 # unknown
+    else:
+        action_one_args = 4 # buyram
+        action_two_args = 3 # unknown 
     process_transaction_with_mixed_actions(test_name, device, backend, scenario_navigator, None, transaction_filename,action_one_args,action_two_args)
 
 
@@ -195,6 +199,32 @@ def test_malformed_transfer(test_name: str,
     assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
+@pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
+def test_malformed_transfer_without_verbose(test_name: str,
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
+
+    # Allow Unknown Actions: navigate and turn on settings
+    run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator, 'allow_unknown_actions')
+
+    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
+
+    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
+    client = EosClient(backend)
+
+    if device.is_nano:
+        end_text = "^Sign$"
+    else:
+        end_text = "^Hold to sign$"
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.review_approve(test_name=snapshot_folder_name, custom_screen_text=end_text)
+    rapdu = client.get_async_response()
+    assert rapdu.status == STATUS_OK
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+
 # Test Unknown action without allow Unknown actions set
 # Note the navigator does not expect a screen change , and does not wait for instructions to produce one.
 @pytest.mark.parametrize("subdir, transaction_filename", [('wampus','transaction_unknown.json')])
@@ -224,3 +254,29 @@ def test_unknown_action_not_allowed(test_name: str,
     rapdu = client.get_async_response()
     # no change ; nothing presented
     assert rapdu.status == 0x6987
+
+# Test Unknown action without allow Unknown actions set
+# Note the navigator does not expect a screen change , and does not wait for instructions to produce one.
+@pytest.mark.parametrize("subdir, transaction_filename", [('wampus','transaction_unknown.json')])
+def test_unknown_action_allowed_not_verbose(test_name: str,
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
+    # Allow Unknown Actions, Verbose off: navigate and turn on settings
+    run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator, 'allow_unknown_actions')
+    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir ,transaction_filename)
+
+    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
+    client = EosClient(backend)
+
+    if device.is_nano:
+        end_text = "^Sign$"
+    else:
+        end_text = "^Hold to sign$"
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.review_approve(test_name=snapshot_folder_name, custom_screen_text=end_text)
+    rapdu = client.get_async_response()
+    assert rapdu.status == STATUS_OK
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)

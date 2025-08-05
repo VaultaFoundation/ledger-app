@@ -77,6 +77,7 @@ typedef struct txProcessingContext_t {
     uint8_t sizeBuffer[12];
     uint8_t actionDataBuffer[512];
     uint8_t unknownActionAllowed;
+    uint8_t isVerbose;
     checksum256 dataChecksum;
     txProcessingContent_t *content;
 } txProcessingContext_t;
@@ -94,7 +95,9 @@ void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
                    cx_sha256_t *dataSha256,
                    txProcessingContent_t *processingContent,
-                   uint8_t unknownActionAllowed);
+                   uint8_t unknownActionAllowed,
+                   uint8_t isVerbose);
+uint8_t readTxByte(txProcessingContext_t *context);
 parserStatus_e parseTx(txProcessingContext_t *context, uint8_t *buffer, uint32_t length);
 
 void printArgument(uint8_t argNum, txProcessingContext_t *processingContext);

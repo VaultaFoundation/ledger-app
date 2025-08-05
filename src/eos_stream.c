@@ -56,13 +56,15 @@ void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
                    cx_sha256_t *dataSha256,
                    txProcessingContent_t *processingContent,
-                   uint8_t allowUnknownAction) {
+                   uint8_t allowUnknownAction,
+                   uint8_t verboseSetting) {
     memset(context, 0, sizeof(txProcessingContext_t));
     context->sha256 = sha256;
     context->dataSha256 = dataSha256;
     context->content = processingContent;
     context->state = TLV_CHAIN_ID;
     context->unknownActionAllowed = allowUnknownAction;
+    context->isVerbose = verboseSetting;
     cx_sha256_init(context->sha256);
     cx_sha256_init(context->dataSha256);
 }
@@ -229,7 +231,13 @@ static void processUnknownAction(txProcessingContext_t *context) {
                                0,
                                context->dataChecksum,
                                sizeof(context->dataChecksum)));
-    context->content->argumentCount = 3;
+    // if verbose ON argument count of 3 to trigger checksum screens
+    // if verbose OFF argument count of 1 to only showing single warning screen
+    if (context->isVerbose) {
+        context->content->argumentCount = 3;
+    } else {
+        context->content->argumentCount = 1;
+    }
 }
 
 static void processEosioNewAccountAction(txProcessingContext_t *context) {

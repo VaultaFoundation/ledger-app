@@ -40,7 +40,7 @@ def _verify_version(version: str) -> None:
         pass
     assert version == vers_str
 
-def run_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
+def run_app_mainmenu_settings_cfg(device, backend, navigator, setting='all', test_name=None):
     client = EosClient(backend)
 
     # Get appversion and "data_allowed parameter"
@@ -63,34 +63,55 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
                 NavInsID.RIGHT_CLICK,
                 NavInsID.LEFT_CLICK,
                 NavInsID.BOTH_CLICK,
-                NavInsID.RIGHT_CLICK,
-                NavInsID.BOTH_CLICK,
-                NavInsID.RIGHT_CLICK,
-                NavInsID.LEFT_CLICK,
-                NavInsID.BOTH_CLICK,
+                NavInsID.RIGHT_CLICK
+            ]
+
+            if setting == 'all' or setting == 'verbose':
+                instructions.extend([
+                    NavInsID.BOTH_CLICK,
+                    NavInsID.RIGHT_CLICK,
+                    NavInsID.LEFT_CLICK
+                    ])
+            else:
+                instructions.append(NavInsID.LEFT_CLICK)
+
+            if setting == 'all' or setting == 'allow_unknown_actions':
+                instructions.append(NavInsID.BOTH_CLICK)
+
+            instructions.extend([
                 NavInsID.RIGHT_CLICK,
                 NavInsID.RIGHT_CLICK,
                 NavInsID.BOTH_CLICK
-            ]
+            ])
         elif device.type == DeviceType.FLEX:
-            instructions = [
-                NavInsID.USE_CASE_HOME_INFO,
-                NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
-                NavInsID.USE_CASE_SETTINGS_NEXT,
-                NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
+            instructions = [NavInsID.USE_CASE_HOME_INFO]
+
+            if setting == 'all' or setting == 'allow_unknown_actions':
+                instructions.append(NavIns(NavInsID.TOUCH, (200, 190)))  # Change setting value
+
+            instructions.append(NavInsID.USE_CASE_SETTINGS_NEXT)
+
+            if setting == 'all' or setting == 'verbose':
+                instructions.append(NavIns(NavInsID.TOUCH, (200, 190)))  # Change setting value
+
+            instructions.extend([
                 NavInsID.USE_CASE_SETTINGS_PREVIOUS,
                 NavInsID.USE_CASE_SETTINGS_NEXT,
                 NavInsID.USE_CASE_SETTINGS_NEXT,
                 NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
-            ]
+            ])
         else:
-            instructions = [
-                NavInsID.USE_CASE_HOME_INFO,
-                NavIns(NavInsID.TOUCH, (200, 190)),  # Change setting value
-                NavIns(NavInsID.TOUCH, (200, 360)),  # Change setting value
+            instructions = [NavInsID.USE_CASE_HOME_INFO]
+
+            if setting == 'all' or setting == 'allow_unknown_actions':
+                instructions.append(NavIns(NavInsID.TOUCH, (200, 190)))  # Change setting value
+            if setting == 'all' or setting == 'verbose':
+                instructions.append(NavIns(NavInsID.TOUCH, (200, 360)))  # Change setting value
+
+            instructions.extend([
                 NavInsID.USE_CASE_SETTINGS_NEXT,
                 NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
-            ]
+            ])
         # test_name null means this is a config change event, not a test
         if test_name:
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, instructions,
@@ -100,9 +121,11 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, test_name=None):
 
         # Check that "data_allowed parameter" changed
         unknown_allowed, is_verbose, version = client.send_get_app_configuration()
-        assert unknown_allowed is True
-        assert is_verbose is True
+        if setting == 'all' or setting == 'allow_unknown_actions':
+            assert unknown_allowed is True
+        if setting == 'all' or setting == 'verbose':
+            assert is_verbose is True
         _verify_version(version)
 
 def test_app_mainmenu_settings_cfg(device, backend, navigator):
-    run_app_mainmenu_settings_cfg(device, backend, navigator, "test_app_mainmenu_settings_cfg")
+    run_app_mainmenu_settings_cfg(device, backend, navigator, 'all', "test_app_mainmenu_settings_cfg")
