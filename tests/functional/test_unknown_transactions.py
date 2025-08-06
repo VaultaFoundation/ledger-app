@@ -82,7 +82,7 @@ def process_transaction_with_mixed_actions(test_name: str,
                                     act1_arg_count=1,
                                     act2_arg_count=1):
 
-    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir, transaction_filename) 
+    snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir, transaction_filename)
 
     _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
@@ -131,8 +131,16 @@ def test_sign_transaction_mixed_actions(test_name: str,
         action_two_args = 3 # unknown
     else:
         action_one_args = 4 # buyram
-        action_two_args = 3 # unknown 
-    process_transaction_with_mixed_actions(test_name, device, backend, scenario_navigator, None, transaction_filename,action_one_args,action_two_args)
+        action_two_args = 3 # unknown
+    process_transaction_with_mixed_actions(
+        test_name,
+        device,
+        backend,
+        scenario_navigator,
+        None,
+        transaction_filename,
+        action_one_args,
+        action_two_args)
 
 
 # This transaction contains multiples actions which fit in one APDU.

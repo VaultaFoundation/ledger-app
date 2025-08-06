@@ -32,7 +32,10 @@ def test_noop_transactions_with_verbose(test_name: str,
     run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
     run_sign_transaction(test_name,device,backend,scenario_navigator,subdir,transaction_filename)
 
-@pytest.mark.parametrize("subdir, transaction_filename", [('null.vaulta', 'mixed_transaction_noop_with_data_trans.json'), ('null.vaulta', 'mixed_transaction_noop_trans.json')])
+@pytest.mark.parametrize("subdir, transaction_filename", [
+    ('null.vaulta', 'mixed_transaction_noop_with_data_trans.json'),
+    ('null.vaulta', 'mixed_transaction_noop_trans.json')
+    ])
 def test_noop_mixed_transactions_with_verbose(test_name: str,
                                    device: Device,
                                    backend: BackendInterface,
@@ -41,5 +44,14 @@ def test_noop_mixed_transactions_with_verbose(test_name: str,
                                    transaction_filename: str):
 
     action_one_args = 1 # noop
-    action_two_args = 4 # transfer 
-    process_transaction_with_mixed_actions(test_name,device,backend,scenario_navigator,subdir,transaction_filename,action_one_args,action_two_args)
+    action_two_args = 4 # transfer
+
+    process_transaction_with_mixed_actions(
+        test_name,
+        device,
+        backend,
+        scenario_navigator,
+        subdir,
+        transaction_filename,
+        action_one_args,
+        action_two_args)

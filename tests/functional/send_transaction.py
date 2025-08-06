@@ -1,14 +1,9 @@
-from json import load
-
 from speculos_lib.backend import SpeculosBackend
 from ragger.bip import pack_derivation_path
 from ragger.utils import split_message
-from test_app_mainmenu_settings_cfg import run_app_mainmenu_settings_cfg
-from test_sign_cmd import get_nano_review_instructions, load_transaction_from_file
+from test_sign_cmd import load_transaction_from_file
 
-from apps.eos import EosClient, STATUS_OK, MAX_CHUNK_SIZE
-from apps.eos_transaction_builder import Transaction
-from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR
+from apps.eos import EosClient, MAX_CHUNK_SIZE
 # Proposed EOS derivation paths for tests ###
 VAULTA_PATH = "m/44'/194'/12345'"
 

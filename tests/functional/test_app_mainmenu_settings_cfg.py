@@ -66,7 +66,7 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, setting='all', tes
                 NavInsID.RIGHT_CLICK
             ]
 
-            if setting == 'all' or setting == 'verbose':
+            if setting in ('all','verbose'):
                 instructions.extend([
                     NavInsID.BOTH_CLICK,
                     NavInsID.RIGHT_CLICK,
@@ -75,7 +75,7 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, setting='all', tes
             else:
                 instructions.append(NavInsID.LEFT_CLICK)
 
-            if setting == 'all' or setting == 'allow_unknown_actions':
+            if setting in ('all','allow_unknown_actions'):
                 instructions.append(NavInsID.BOTH_CLICK)
 
             instructions.extend([
@@ -86,12 +86,12 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, setting='all', tes
         elif device.type == DeviceType.FLEX:
             instructions = [NavInsID.USE_CASE_HOME_INFO]
 
-            if setting == 'all' or setting == 'allow_unknown_actions':
+            if setting in ('all','allow_unknown_actions'):
                 instructions.append(NavIns(NavInsID.TOUCH, (200, 190)))  # Change setting value
 
             instructions.append(NavInsID.USE_CASE_SETTINGS_NEXT)
 
-            if setting == 'all' or setting == 'verbose':
+            if setting in ('all','verbose'):
                 instructions.append(NavIns(NavInsID.TOUCH, (200, 190)))  # Change setting value
 
             instructions.extend([
@@ -103,9 +103,9 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, setting='all', tes
         else:
             instructions = [NavInsID.USE_CASE_HOME_INFO]
 
-            if setting == 'all' or setting == 'allow_unknown_actions':
+            if setting in ('all','allow_unknown_actions'):
                 instructions.append(NavIns(NavInsID.TOUCH, (200, 190)))  # Change setting value
-            if setting == 'all' or setting == 'verbose':
+            if setting in ('all','verbose'):
                 instructions.append(NavIns(NavInsID.TOUCH, (200, 360)))  # Change setting value
 
             instructions.extend([
@@ -121,9 +121,9 @@ def run_app_mainmenu_settings_cfg(device, backend, navigator, setting='all', tes
 
         # Check that "data_allowed parameter" changed
         unknown_allowed, is_verbose, version = client.send_get_app_configuration()
-        if setting == 'all' or setting == 'allow_unknown_actions':
+        if setting in ('all','allow_unknown_actions'):
             assert unknown_allowed is True
-        if setting == 'all' or setting == 'verbose':
+        if setting in ('all','verbose'):
             assert is_verbose is True
         _verify_version(version)
 
