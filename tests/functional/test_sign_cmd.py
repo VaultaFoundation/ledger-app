@@ -61,14 +61,12 @@ def handle_unknown_action(client, message, scenario_navigator, folder_name):
     # assert the error and exception occurred
     assert rapdu is None
 
-# TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
-# out parameterized tests accepts a list of tuples
 def run_sign_transaction(test_name: str,
-                                   device: Device,
-                                   backend: BackendInterface,
-                                   scenario_navigator: NavigateWithScenario,
-                                   subdir: str,
-                                   transaction_filename: str):
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
 
     folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
 
@@ -89,6 +87,28 @@ def run_sign_transaction(test_name: str,
         scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
     assert rapdu.status == STATUS_OK
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+
+def noop_sign_transaction(test_name: str,
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
+
+    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
+
+    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
+    client = EosClient(backend)
+
+    instructions = []
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
+                                    folder_name,
+                                    instructions,
+                                    screen_change_before_first_instruction = False,
+                                    screen_change_after_last_instruction = False)
+    rapdu = client.get_async_response()
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)

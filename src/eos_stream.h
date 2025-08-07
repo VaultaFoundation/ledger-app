@@ -78,6 +78,7 @@ typedef struct txProcessingContext_t {
     uint8_t actionDataBuffer[512];
     uint8_t unknownActionAllowed;
     uint8_t isVerbose;
+    uint8_t noData;
     checksum256 dataChecksum;
     txProcessingContent_t *content;
 } txProcessingContext_t;
@@ -89,6 +90,7 @@ typedef enum parserStatus_e {
     STREAM_CONFIRM_PROCESSING,
     STREAM_FINISHED,
     STREAM_NOT_ALLOWED,
+    STREAM_SIGN
 } parserStatus_e;
 
 void initTxContext(txProcessingContext_t *context,

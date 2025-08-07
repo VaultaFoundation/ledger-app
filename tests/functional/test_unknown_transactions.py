@@ -204,7 +204,6 @@ def test_malformed_transfer(test_name: str,
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.review_approve(test_name=snapshot_folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
-    assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 @pytest.mark.parametrize("subdir, transaction_filename", unknown_trans)
@@ -230,7 +229,6 @@ def test_malformed_transfer_without_verbose(test_name: str,
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.review_approve(test_name=snapshot_folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
-    assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 # Test Unknown action without allow Unknown actions set

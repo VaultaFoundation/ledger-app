@@ -65,6 +65,7 @@ void initTxContext(txProcessingContext_t *context,
     context->state = TLV_CHAIN_ID;
     context->unknownActionAllowed = allowUnknownAction;
     context->isVerbose = verboseSetting;
+    context->noData = 0;
     cx_sha256_init(context->sha256);
     cx_sha256_init(context->dataSha256);
 }
@@ -92,9 +93,8 @@ static void processTokenTransfer(txProcessingContext_t *context) {
     }
 }
 
-/* no-op has no args no abi */
 static void processNoOperation(txProcessingContext_t *context) {
-    context->content->argumentCount = 1;
+        context->content->argumentCount = 1;
 }
 
 static void processEosioDelegate(txProcessingContext_t *context) {
@@ -233,7 +233,7 @@ static void processUnknownAction(txProcessingContext_t *context) {
                                sizeof(context->dataChecksum)));
     // if verbose ON argument count of 3 to trigger checksum screens
     // if verbose OFF argument count of 1 to only showing single warning screen
-    if (context->isVerbose) {
+    if (context->isVerbose == 1) {
         context->content->argumentCount = 3;
     } else {
         context->content->argumentCount = 1;
@@ -306,6 +306,24 @@ static void processEosioNewAccountAction(txProcessingContext_t *context) {
     unpack_variant32(buffer, bufferLength, &size);
     LEDGER_ASSERT(size == 0, "No delays allowed");
     context->content->argumentCount = 4;
+}
+
+/* 
+ * a noop action is special, and does not change on-chain state
+ * we approve blind signing only when
+ ** NULL.VAULTA::NOOP action 
+ ** no data payload
+ ** verbose is off
+*/
+bool blindSignOk(txProcessingContext_t *context) {
+    if (context != NULL 
+        && context->contractName == NULL_VAULTA 
+        && context->contractActionName == NOOP_ACTION
+        && context->isVerbose != 1
+        && context->noData) {
+        return true;
+    }
+    return false;
 }
 
 void printArgument(uint8_t argNum, txProcessingContext_t *context) {
@@ -894,6 +912,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
             context->currentFieldPos = 0;
             context->tlvBufferPos = 0;
             context->processingField = true;
+            context->noData = (context->currentFieldLength == 0);
         }
         switch (context->state) {
             case TLV_CHAIN_ID:
@@ -935,7 +954,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA_SIZE:
-                if (isKnownAction(context) || context->unknownActionAllowed == 0) {
+                if (isKnownAction(context) || context->unknownActionAllowed != 1) {
                     processField(context);
                 } else {
                     processUnknownActionDataSize(context);
@@ -943,6 +962,13 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA:
+                if (blindSignOk(context)) {
+                    // never blind sign multi-action transactions
+                    if (context->currentActionNumber <= 1) {
+                        // skip user review proceed directly to sign transaction
+                        return STREAM_SIGN;
+                    }
+                }
                 if (isKnownAction(context)) {
                     processActionData(context);
                 } else if (context->unknownActionAllowed == 1) {
