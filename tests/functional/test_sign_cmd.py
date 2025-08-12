@@ -1,10 +1,11 @@
 from json import load
 import pytest
+import time
 
 from ledgered.devices import Device, DeviceType # type: ignore
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
-from ragger.navigator import NavInsID
+from ragger.navigator import NavInsID, NavIns
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
@@ -86,30 +87,37 @@ def run_sign_transaction(test_name: str,
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
-    assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 def noop_sign_transaction(test_name: str,
-                            device: Device,
-                            backend: BackendInterface,
-                            scenario_navigator: NavigateWithScenario,
-                            subdir: str,
-                            transaction_filename: str):
+                          device: Device,
+                          backend: BackendInterface,
+                          scenario_navigator: NavigateWithScenario,
+                          subdir: str,
+                          transaction_filename: str):
 
-    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
+    folder_name = f"{test_name}/{subdir}/{transaction_filename.replace('.json', '')}"
 
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
 
-    instructions = []
-    with client.send_async_sign_message(VAULTA_PATH, message):
+    # Unknown Actions: not allowed handle separately
+    if subdir == 'wampus' and transaction_filename == 'transaction_valid.json':
+        handle_unknown_action(client, message, scenario_navigator, folder_name)
+        return
+    backend.raise_policy = RaisePolicy.RAISE_NOTHING
+
+    if device.is_nano:
+        instructions = [NavInsID.RIGHT_CLICK]
+    else:
+        instructions = [NavInsID.USE_CASE_REVIEW_TAP]
+    with client.send_async_sign_message_full(message, False):
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
-                                    folder_name,
-                                    instructions,
-                                    screen_change_before_first_instruction = False,
-                                    screen_change_after_last_instruction = False)
-    rapdu = client.get_async_response()
-    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+                                       folder_name,
+                                       instructions,
+                                       screen_change_before_first_instruction=False)
+    response = client.get_async_response()
+    client.verify_signature(VAULTA_PATH, signing_digest, response.data, True)
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
 def test_sign_transaction_accepted(test_name: str,

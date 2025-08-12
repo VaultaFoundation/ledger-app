@@ -107,8 +107,7 @@ void user_action_sign_flow_ok(void) {
             ui_abort_unknown_action();
             break;
         case STREAM_SIGN:
-            /* proceed directly to signing */
-            io_exchange_with_code(0x9000, sign_hash_and_set_result());
+            ui_display_blind_sign_flow();
             break;
         default:
             io_exchange_with_code(0x6A80, 0);
@@ -348,8 +347,8 @@ uint32_t handleSign(uint8_t p1,
             ui_abort_unknown_action();
             return 0x6987;
         case STREAM_SIGN:
-            /* proceed directly to signing */
-            *tx = sign_hash_and_set_result();
+            ui_display_blind_sign_flow();
+            *flags |= IO_ASYNCH_REPLY;
             break;
         default:
             PRINTF("Unexpected parser status\n");

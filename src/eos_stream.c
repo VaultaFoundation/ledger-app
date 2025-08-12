@@ -864,10 +864,19 @@ static void processActionData(txProcessingContext_t *context) {
 
 static parserStatus_e processTxInternal(txProcessingContext_t *context) {
     for (;;) {
+        // this is multi action processing
         if (context->confirmProcessing) {
             context->confirmProcessing = false;
             return STREAM_CONFIRM_PROCESSING;
         }
+        // skip user review proceed directly to sign transaction
+        // only for single action trx (currentActionNumber == 1)
+        if (blindSignOk(context) && context->actionReady) {
+            context->actionReady = false;
+            // process acount only applies to null.vaulta::noop
+            return STREAM_SIGN;
+        }
+        // this is single action only
         if (context->actionReady) {
             context->actionReady = false;
             return STREAM_ACTION_READY;
@@ -962,13 +971,6 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA:
-                if (blindSignOk(context)) {
-                    // never blind sign multi-action transactions
-                    if (context->currentActionNumber <= 1) {
-                        // skip user review proceed directly to sign transaction
-                        return STREAM_SIGN;
-                    }
-                }
                 if (isKnownAction(context)) {
                     processActionData(context);
                 } else if (context->unknownActionAllowed == 1) {
