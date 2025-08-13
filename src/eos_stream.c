@@ -94,7 +94,7 @@ static void processTokenTransfer(txProcessingContext_t *context) {
 }
 
 static void processNoOperation(txProcessingContext_t *context) {
-        context->content->argumentCount = 1;
+    context->content->argumentCount = 1;
 }
 
 static void processEosioDelegate(txProcessingContext_t *context) {
@@ -308,19 +308,16 @@ static void processEosioNewAccountAction(txProcessingContext_t *context) {
     context->content->argumentCount = 4;
 }
 
-/* 
+/*
  * a noop action is special, and does not change on-chain state
  * we approve blind signing only when
- ** NULL.VAULTA::NOOP action 
+ ** NULL.VAULTA::NOOP action
  ** no data payload
  ** verbose is off
-*/
+ */
 bool blindSignOk(txProcessingContext_t *context) {
-    if (context != NULL 
-        && context->contractName == NULL_VAULTA 
-        && context->contractActionName == NOOP_ACTION
-        && context->isVerbose != 1
-        && context->noData) {
+    if (context != NULL && context->contractName == NULL_VAULTA &&
+        context->contractActionName == NOOP_ACTION && context->isVerbose != 1 && context->noData) {
         return true;
     }
     return false;

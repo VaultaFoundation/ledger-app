@@ -61,6 +61,14 @@ UX_STEP_NOCB(ux_status_flow_1_step,
                  confirm_text1,
                  confirm_text2,
              });
+UX_STEP_CB(ux_ack_flow_1_step,
+           pbb,
+           user_action_sign_flow_ok(),
+           {
+               &C_icon_validate_14,
+               confirm_text1,
+               confirm_text2,
+           });
 ///////////////////////////////////////////////////////////////////////////////
 
 UX_STEP_NOCB(ux_idle_ready_step,
@@ -348,7 +356,7 @@ void ui_display_action_sign_done(parserStatus_e status, bool validated) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Define flow steps array (rename to avoid clash with function name)
-UX_FLOW(ux_display_blind_sign_flow_steps, &ux_status_flow_1_step);
+UX_FLOW(ux_display_blind_sign_flow_steps, &ux_ack_flow_1_step);
 
 void ui_display_blind_sign_flow(void) {
     unsigned int wr1 = snprintf(confirm_text1, sizeof(confirm_text1), "%s", txContent.contract);
@@ -358,7 +366,7 @@ void ui_display_blind_sign_flow(void) {
         ui_abort_unknown_action();
     } else {
         ux_flow_init(0, ux_display_blind_sign_flow_steps, NULL);
-        ui_idle();
+        // ui_idle();
     }
 }
 

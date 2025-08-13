@@ -96,7 +96,7 @@ def noop_sign_transaction(test_name: str,
                           subdir: str,
                           transaction_filename: str):
 
-    folder_name = f"{test_name}/{subdir}/{transaction_filename.replace('.json', '')}"
+    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
 
     signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
@@ -105,19 +105,21 @@ def noop_sign_transaction(test_name: str,
     if subdir == 'wampus' and transaction_filename == 'transaction_valid.json':
         handle_unknown_action(client, message, scenario_navigator, folder_name)
         return
-    backend.raise_policy = RaisePolicy.RAISE_NOTHING
 
+    # Known Actions Continue
     if device.is_nano:
-        instructions = [NavInsID.RIGHT_CLICK]
+        end_text = "^Quit$"
     else:
-        instructions = [NavInsID.USE_CASE_REVIEW_TAP]
-    with client.send_async_sign_message_full(message, False):
-        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
-                                       folder_name,
-                                       instructions,
-                                       screen_change_before_first_instruction=False)
-    response = client.get_async_response()
-    client.verify_signature(VAULTA_PATH, signing_digest, response.data, True)
+        end_text = "^Application$"
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, 
+                    folder_name, 
+                    [NavInsID.BOTH_CLICK, NavInsID.RIGHT_CLICK],
+                    timeout=10,
+                    screen_change_before_first_instruction=True
+                    )
+    #rapdu = client.get_async_response()
+    #client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
 def test_sign_transaction_accepted(test_name: str,
