@@ -24,11 +24,24 @@
 #include "eos_types.h"
 #include "eos_parse.h"
 
+#define SUMMARY_ACTIONS_SIZE 10
+
+typedef struct actionSummary_t {
+    name_t contractName;
+    name_t actionName;
+    uint8_t noData;
+} actionSummary_t;
+
 typedef struct txProcessingContent_t {
     char argumentCount;
     char contract[14];
     char action[14];
     actionArgument_t arg;
+
+    // New fields for preprocessing summary of actions
+    uint32_t actionCount;
+    actionSummary_t actions[SUMMARY_ACTIONS_SIZE];  // Adjust size as needed
+    uint8_t isVerbose;
 } txProcessingContent_t;
 
 typedef enum txProcessingState_e {
@@ -77,8 +90,6 @@ typedef struct txProcessingContext_t {
     uint8_t sizeBuffer[12];
     uint8_t actionDataBuffer[512];
     uint8_t unknownActionAllowed;
-    uint8_t isVerbose;
-    uint8_t noData;
     checksum256 dataChecksum;
     txProcessingContent_t *content;
 } txProcessingContext_t;
@@ -89,8 +100,7 @@ typedef enum parserStatus_e {
     STREAM_ACTION_READY,
     STREAM_CONFIRM_PROCESSING,
     STREAM_FINISHED,
-    STREAM_NOT_ALLOWED,
-    STREAM_SIGN
+    STREAM_NOT_ALLOWED
 } parserStatus_e;
 
 void initTxContext(txProcessingContext_t *context,

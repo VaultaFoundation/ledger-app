@@ -108,18 +108,18 @@ def noop_sign_transaction(test_name: str,
 
     # Known Actions Continue
     if device.is_nano:
-        end_text = "^Quit$"
+        instructions = [NavInsID.RIGHT_CLICK, NavInsID.LEFT_CLICK, NavInsID.BOTH_CLICK]
     else:
-        end_text = "^Application$"
+        instructions = [NavInsID.BOTH_CLICK, NavInsID.RIGHT_CLICK]
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, 
                     folder_name, 
-                    [NavInsID.BOTH_CLICK, NavInsID.RIGHT_CLICK],
+                    instructions,
                     timeout=10,
                     screen_change_before_first_instruction=True
                     )
-    #rapdu = client.get_async_response()
-    #client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+    rapdu = client.get_async_response()
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 @pytest.mark.parametrize("subdir, transaction_filename", transactions)
 def test_sign_transaction_accepted(test_name: str,

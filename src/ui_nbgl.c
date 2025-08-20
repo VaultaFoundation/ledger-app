@@ -209,7 +209,7 @@ static void review_choice_multi(bool confirm) {
     }
 }
 
-void ui_display_single_action_sign_flow(void) {
+void ui_display_single_action_sign_flow(bool verbose) {
     explicit_bzero(&pairList, sizeof(pairList));
 
     if (txProcessingCtx.currentActionNumber == 1) {

@@ -52,24 +52,6 @@
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
 
-void initTxContext(txProcessingContext_t *context,
-                   cx_sha256_t *sha256,
-                   cx_sha256_t *dataSha256,
-                   txProcessingContent_t *processingContent,
-                   uint8_t allowUnknownAction,
-                   uint8_t verboseSetting) {
-    memset(context, 0, sizeof(txProcessingContext_t));
-    context->sha256 = sha256;
-    context->dataSha256 = dataSha256;
-    context->content = processingContent;
-    context->state = TLV_CHAIN_ID;
-    context->unknownActionAllowed = allowUnknownAction;
-    context->isVerbose = verboseSetting;
-    context->noData = 0;
-    cx_sha256_init(context->sha256);
-    cx_sha256_init(context->dataSha256);
-}
-
 uint8_t readTxByte(txProcessingContext_t *context) {
     uint8_t data;
     LEDGER_ASSERT(context->commandLength >= 1, "readTxByte Underflow");
@@ -233,7 +215,7 @@ static void processUnknownAction(txProcessingContext_t *context) {
                                sizeof(context->dataChecksum)));
     // if verbose ON argument count of 3 to trigger checksum screens
     // if verbose OFF argument count of 1 to only showing single warning screen
-    if (context->isVerbose == 1) {
+    if (context->content->isVerbose == 1) {
         context->content->argumentCount = 3;
     } else {
         context->content->argumentCount = 1;
@@ -306,21 +288,6 @@ static void processEosioNewAccountAction(txProcessingContext_t *context) {
     unpack_variant32(buffer, bufferLength, &size);
     LEDGER_ASSERT(size == 0, "No delays allowed");
     context->content->argumentCount = 4;
-}
-
-/*
- * a noop action is special, and does not change on-chain state
- * we approve blind signing only when
- ** NULL.VAULTA::NOOP action
- ** no data payload
- ** verbose is off
- */
-bool blindSignOk(txProcessingContext_t *context) {
-    if (context != NULL && context->contractName == NULL_VAULTA &&
-        context->contractActionName == NOOP_ACTION && context->isVerbose != 1 && context->noData) {
-        return true;
-    }
-    return false;
 }
 
 void printArgument(uint8_t argNum, txProcessingContext_t *context) {
@@ -866,13 +833,6 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
             context->confirmProcessing = false;
             return STREAM_CONFIRM_PROCESSING;
         }
-        // skip user review proceed directly to sign transaction
-        // only for single action trx (currentActionNumber == 1)
-        if (blindSignOk(context) && context->actionReady) {
-            context->actionReady = false;
-            // process acount only applies to null.vaulta::noop
-            return STREAM_SIGN;
-        }
         // this is single action only
         if (context->actionReady) {
             context->actionReady = false;
@@ -918,7 +878,6 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
             context->currentFieldPos = 0;
             context->tlvBufferPos = 0;
             context->processingField = true;
-            context->noData = (context->currentFieldLength == 0);
         }
         switch (context->state) {
             case TLV_CHAIN_ID:
@@ -991,6 +950,85 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 return STREAM_FAULT;
         }
     }
+}
+
+/**
+ * Documentation:
+ * The preprocessActions function scans the transaction buffer to extract a summary of all actions
+ * including contractName, actionName, and argumentCount. It does so without permanently advancing
+ * the parsing state by saving and restoring the context's state, workBuffer, and commandLength.
+ * This preprocessing step is called from initTxContext to prepare a summary of actions before
+ * full parsing begins, improving efficiency
+ **/
+static void preprocessActions(txProcessingContext_t *context) {
+    // Save current parsing state and buffer pointers
+    txProcessingState_e savedState = context->state;
+    uint8_t *savedWorkBuffer = context->workBuffer;
+    uint32_t savedCommandLength = context->commandLength;
+    uint32_t savedCurrentFieldPos = context->currentFieldPos;
+    uint32_t savedCurrentFieldLength = context->currentFieldLength;
+    uint32_t savedCurrentActionIndex = context->currentActionIndex;
+    uint32_t savedCurrentActionNumber = context->currentActionNumber;
+    uint8_t savedProcessingField = context->processingField;
+    bool savedActionReady = context->actionReady;
+    bool savedConfirmProcessing = context->confirmProcessing;
+
+    // Initialize action count
+    context->content->actionCount = 0;
+
+    // Temporary context for parsing actions
+    while (context->content->actionCount < 10 &&
+           context->content->actionCount < context->currentActionNumber) {
+        parserStatus_e status = processTxInternal(context);
+        if (status == STREAM_ACTION_READY || status == STREAM_CONFIRM_PROCESSING) {
+            // Store action summary
+            actionSummary_t *action = &context->content->actions[context->content->actionCount];
+            action->contractName = context->contractName;
+            action->actionName = context->contractActionName;
+            action->noData = (context->currentFieldLength == 0);
+            context->content->actionCount++;
+
+            // Mark action as processed to continue parsing next action
+            context->actionReady = false;
+        } else if (status == STREAM_FINISHED) {
+            break;
+        } else if (status == STREAM_NOT_ALLOWED || status == STREAM_FAULT) {
+            // Stop on error
+            break;
+        }
+    }
+
+    // Restore saved parsing state and buffer pointers
+    context->state = savedState;
+    context->workBuffer = savedWorkBuffer;
+    context->commandLength = savedCommandLength;
+    context->currentFieldPos = savedCurrentFieldPos;
+    context->currentFieldLength = savedCurrentFieldLength;
+    context->currentActionIndex = savedCurrentActionIndex;
+    context->currentActionNumber = savedCurrentActionNumber;
+    context->processingField = savedProcessingField;
+    context->actionReady = savedActionReady;
+    context->confirmProcessing = savedConfirmProcessing;
+}
+
+void initTxContext(txProcessingContext_t *context,
+                   cx_sha256_t *sha256,
+                   cx_sha256_t *dataSha256,
+                   txProcessingContent_t *processingContent,
+                   uint8_t allowUnknownAction,
+                   uint8_t verboseSetting) {
+    memset(context, 0, sizeof(txProcessingContext_t));
+    context->sha256 = sha256;
+    context->dataSha256 = dataSha256;
+    context->content = processingContent;
+    context->state = TLV_CHAIN_ID;
+    context->unknownActionAllowed = allowUnknownAction;
+    context->content->isVerbose = verboseSetting;
+    cx_sha256_init(context->sha256);
+    cx_sha256_init(context->dataSha256);
+
+    // Preprocess actions to extract summary without advancing parsing state permanently
+    preprocessActions(context);
 }
 
 /**
