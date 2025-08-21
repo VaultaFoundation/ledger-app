@@ -25,6 +25,7 @@
 #include "eos_parse_token.h"
 #include "eos_parse_eosio.h"
 #include "eos_parse_unknown.h"
+#include "state_neutral.h"
 
 /* CONTRACT OWNERS */
 #define CORE_VAULTA 0x452EA06CDA8E4C00
@@ -51,6 +52,25 @@
 #define UNLINK_AUTH_ACTION 0xD4E2E9C0DACB4000
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
+
+void initTxContext(txProcessingContext_t *context,
+                   cx_sha256_t *sha256,
+                   cx_sha256_t *dataSha256,
+                   txProcessingContent_t *processingContent,
+                   uint8_t allowUnknownAction,
+                   uint8_t verboseSetting) {
+    memset(context, 0, sizeof(txProcessingContext_t));
+    context->sha256 = sha256;
+    context->dataSha256 = dataSha256;
+    context->content = processingContent;
+    context->state = TLV_CHAIN_ID;
+    context->unknownActionAllowed = allowUnknownAction;
+    context->content->isVerbose = verboseSetting;
+    context->content->noData = 0;
+    context->stateNeutralActionCount = 0;
+    cx_sha256_init(context->sha256);
+    cx_sha256_init(context->dataSha256);
+}
 
 uint8_t readTxByte(txProcessingContext_t *context) {
     uint8_t data;
@@ -878,6 +898,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
             context->currentFieldPos = 0;
             context->tlvBufferPos = 0;
             context->processingField = true;
+            context->content->noData = (context->currentFieldLength == 0);
         }
         switch (context->state) {
             case TLV_CHAIN_ID:
@@ -919,6 +940,12 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA_SIZE:
+                // content args avalible after processActionAccount & processActionName
+                if (isStateNeutralAction(context->content->contract,
+                                         context->content->action,
+                                         context->content->noData)) {
+                    context->stateNeutralActionCount = context->stateNeutralActionCount + 1;
+                }
                 if (isKnownAction(context) || context->unknownActionAllowed != 1) {
                     processField(context);
                 } else {
@@ -950,85 +977,6 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 return STREAM_FAULT;
         }
     }
-}
-
-/**
- * Documentation:
- * The preprocessActions function scans the transaction buffer to extract a summary of all actions
- * including contractName, actionName, and argumentCount. It does so without permanently advancing
- * the parsing state by saving and restoring the context's state, workBuffer, and commandLength.
- * This preprocessing step is called from initTxContext to prepare a summary of actions before
- * full parsing begins, improving efficiency
- **/
-static void preprocessActions(txProcessingContext_t *context) {
-    // Save current parsing state and buffer pointers
-    txProcessingState_e savedState = context->state;
-    uint8_t *savedWorkBuffer = context->workBuffer;
-    uint32_t savedCommandLength = context->commandLength;
-    uint32_t savedCurrentFieldPos = context->currentFieldPos;
-    uint32_t savedCurrentFieldLength = context->currentFieldLength;
-    uint32_t savedCurrentActionIndex = context->currentActionIndex;
-    uint32_t savedCurrentActionNumber = context->currentActionNumber;
-    uint8_t savedProcessingField = context->processingField;
-    bool savedActionReady = context->actionReady;
-    bool savedConfirmProcessing = context->confirmProcessing;
-
-    // Initialize action count
-    context->content->actionCount = 0;
-
-    // Temporary context for parsing actions
-    while (context->content->actionCount < 10 &&
-           context->content->actionCount < context->currentActionNumber) {
-        parserStatus_e status = processTxInternal(context);
-        if (status == STREAM_ACTION_READY || status == STREAM_CONFIRM_PROCESSING) {
-            // Store action summary
-            actionSummary_t *action = &context->content->actions[context->content->actionCount];
-            action->contractName = context->contractName;
-            action->actionName = context->contractActionName;
-            action->noData = (context->currentFieldLength == 0);
-            context->content->actionCount++;
-
-            // Mark action as processed to continue parsing next action
-            context->actionReady = false;
-        } else if (status == STREAM_FINISHED) {
-            break;
-        } else if (status == STREAM_NOT_ALLOWED || status == STREAM_FAULT) {
-            // Stop on error
-            break;
-        }
-    }
-
-    // Restore saved parsing state and buffer pointers
-    context->state = savedState;
-    context->workBuffer = savedWorkBuffer;
-    context->commandLength = savedCommandLength;
-    context->currentFieldPos = savedCurrentFieldPos;
-    context->currentFieldLength = savedCurrentFieldLength;
-    context->currentActionIndex = savedCurrentActionIndex;
-    context->currentActionNumber = savedCurrentActionNumber;
-    context->processingField = savedProcessingField;
-    context->actionReady = savedActionReady;
-    context->confirmProcessing = savedConfirmProcessing;
-}
-
-void initTxContext(txProcessingContext_t *context,
-                   cx_sha256_t *sha256,
-                   cx_sha256_t *dataSha256,
-                   txProcessingContent_t *processingContent,
-                   uint8_t allowUnknownAction,
-                   uint8_t verboseSetting) {
-    memset(context, 0, sizeof(txProcessingContext_t));
-    context->sha256 = sha256;
-    context->dataSha256 = dataSha256;
-    context->content = processingContent;
-    context->state = TLV_CHAIN_ID;
-    context->unknownActionAllowed = allowUnknownAction;
-    context->content->isVerbose = verboseSetting;
-    cx_sha256_init(context->sha256);
-    cx_sha256_init(context->dataSha256);
-
-    // Preprocess actions to extract summary without advancing parsing state permanently
-    preprocessActions(context);
 }
 
 /**

@@ -24,24 +24,13 @@
 #include "eos_types.h"
 #include "eos_parse.h"
 
-#define SUMMARY_ACTIONS_SIZE 10
-
-typedef struct actionSummary_t {
-    name_t contractName;
-    name_t actionName;
-    uint8_t noData;
-} actionSummary_t;
-
 typedef struct txProcessingContent_t {
+    uint8_t isVerbose;
+    uint8_t noData;
     char argumentCount;
     char contract[14];
     char action[14];
     actionArgument_t arg;
-
-    // New fields for preprocessing summary of actions
-    uint32_t actionCount;
-    actionSummary_t actions[SUMMARY_ACTIONS_SIZE];  // Adjust size as needed
-    uint8_t isVerbose;
 } txProcessingContent_t;
 
 typedef enum txProcessingState_e {
@@ -79,6 +68,7 @@ typedef struct txProcessingContext_t {
     uint32_t currentAutorizationNumber;
     uint32_t currentActionIndex;
     uint32_t currentActionNumber;
+    uint32_t stateNeutralActionCount;
     uint32_t currentActionDataBufferLength;
     bool processingField;
     uint8_t tlvBuffer[5];
@@ -100,7 +90,8 @@ typedef enum parserStatus_e {
     STREAM_ACTION_READY,
     STREAM_CONFIRM_PROCESSING,
     STREAM_FINISHED,
-    STREAM_NOT_ALLOWED
+    STREAM_NOT_ALLOWED,
+    STREAM_SIGN
 } parserStatus_e;
 
 void initTxContext(txProcessingContext_t *context,
@@ -109,7 +100,9 @@ void initTxContext(txProcessingContext_t *context,
                    txProcessingContent_t *processingContent,
                    uint8_t unknownActionAllowed,
                    uint8_t isVerbose);
-uint8_t readTxByte(txProcessingContext_t *context);
+
+static inline bool isStateNeutralAction(const char *contract, const char *action, uint8_t noData);
+
 parserStatus_e parseTx(txProcessingContext_t *context, uint8_t *buffer, uint32_t length);
 
 void printArgument(uint8_t argNum, txProcessingContext_t *processingContext);

@@ -26,6 +26,7 @@
 #include "main.h"
 #include "ui.h"
 #include "config.h"
+#include "state_neutral.h"
 
 static char actionCounter[32];
 static char confirmLabel[32];
@@ -34,6 +35,9 @@ static char smallConfirmLabel[16];
 // display stepped screens
 static unsigned int ux_step;
 static unsigned int ux_step_count;
+
+// count for multi-actions screens
+static unsigned int effectiveActionIndex;
 
 static char confirm_text1[16];
 static char confirm_text2[16];
@@ -334,54 +338,67 @@ static void display_next_state(uint8_t state) {
 void ui_display_single_action_sign_flow() {
     ux_step = 0;
     ux_step_count = txContent.argumentCount;
+    uint8_t effectiveActions =
+        txProcessingCtx.currentActionNumber - txProcessingCtx.stateNeutralActionCount;
 
     // Label the review screen differently for single vs. multi-action transactions
-    if (txProcessingCtx.currentActionNumber > 1) {
-        snprintf(confirmLabel,
-                 sizeof(confirmLabel),
-                 "Action #%d",
-                 txProcessingCtx.currentActionIndex);
+    if (effectiveActions > 1) {
+        // must have previous gone to multi action flow init effectiveActionIndex
+        snprintf(confirmLabel, sizeof(confirmLabel), "Action #%d", effectiveActionIndex);
     } else {
         strlcpy(confirmLabel, "Transaction", sizeof(confirmLabel));
     }
 
-    // --- Special case: State-neutral actions (no chain state change) ---
-    // For these, when part of a multi-action transaction we can skip the review entirely
-    // Otherwise display a short-form approve/reject screen.
-    // If verbose then display full review screens
-    if (isStateNeutralAction(txContent.contract,
-                             txContent.action,
-                             txContent.actions[txProcessingCtx.currentActionIndex - 1].noData) &&
-        !txContent.isVerbose) {
-        // if (txContent.actionCount == 0) {
-        //  If this is the *only* action in the transaction, display short form
-        unsigned int wr1 =
-            snprintf(confirm_text1, sizeof(confirm_text1), "Sign %s", txContent.action);
-        unsigned int wr2 =
-            snprintf(confirm_text2, sizeof(confirm_text2), "From %s", txContent.contract);
-
-        // Fallback: abort if labels won't fit
-        if (wr1 >= sizeof(confirm_text1) || wr1 < 0 || wr2 >= sizeof(confirm_text2) || wr2 < 0) {
-            ui_abort_unknown_action();
+    /*
+    ** defines two main states for handling transaction actions in the UI flow:
+    ** State-Neutral Action State:
+    **
+    ** If the transaction has multiple actions, the review is skipped for state neutral actions
+    ** and the action is auto-approved. If the transaction has a single state-neutral action, a
+    ** short confirmation UI flow is shown with text "Sign [action]" and "From [contract]". If text
+    ** formatting fails, the UI aborts with ui_abort_unknown_action().
+    **
+    ** Default (Non State-Neutral) Action State:
+    **
+    ** Triggered when the action is not state-neutral or verbose mode is enabled.
+    ** If the current action is the last in the transaction, a transaction review screen is show.
+    ** Otherwise, the review continues with the next action.
+    ** The code also manages UI steps and transitions for reviewing single or multiple actions,
+    ** with specific UX flows for each case.
+    */
+    if (!txContent.isVerbose &&
+        isStateNeutralAction(txContent.contract, txContent.action, txContent.noData)) {
+        // For multi-action transaction: skip review for neutral action
+        if (txProcessingCtx.currentActionNumber > 1) {
+            user_action_sign_flow_ok();
         } else {
-            ux_flow_init(0, ux_display_short_sign_flow_steps, NULL);
+            // Single state-neutral action (only action in tx)
+            // Special short flow
+            unsigned int wr1 =
+                snprintf(confirm_text1, sizeof(confirm_text1), "Sign %s", txContent.action);
+            unsigned int wr2 =
+                snprintf(confirm_text2, sizeof(confirm_text2), "From %s", txContent.contract);
+
+            if (wr1 >= sizeof(confirm_text1) || wr1 < 0 || wr2 >= sizeof(confirm_text2) ||
+                wr2 < 0) {
+                ui_abort_unknown_action();
+            } else {
+                ux_flow_init(0, ux_display_short_sign_flow_steps, NULL);
+            }
         }
-        //}
-        return;  // Skip for state-neutral-only transactions in multi-action transaction
-    }
-
-    // --- Default: Full review flow ---
-    if (txProcessingCtx.currentActionIndex == txProcessingCtx.currentActionNumber) {
-        // Last action in transaction: approve to sign entire transaction
-        strlcpy(confirm_text1, "Sign", sizeof(confirm_text1));
-        strlcpy(confirm_text2, "transaction", sizeof(confirm_text2));
     } else {
-        // Intermediate action: approve to continue reviewing
-        strlcpy(confirm_text1, "Accept", sizeof(confirm_text1));
-        strlcpy(confirm_text2, "& review next", sizeof(confirm_text2));
-    }
+        // --- Default: Full review flow : not state-neutral action ---
+        if (txProcessingCtx.currentActionIndex == txProcessingCtx.currentActionNumber) {
+            strlcpy(confirm_text1, "Sign", sizeof(confirm_text1));
+            strlcpy(confirm_text2, "transaction", sizeof(confirm_text2));
+        } else {
+            strlcpy(confirm_text1, "Accept", sizeof(confirm_text1));
+            strlcpy(confirm_text2, "& review next", sizeof(confirm_text2));
+        }
 
-    ux_flow_init(0, ux_single_action_sign_flow, NULL);
+        ux_flow_init(0, ux_single_action_sign_flow, NULL);
+    }
+    effectiveActionIndex++;
 }
 
 void ui_display_action_sign_done(parserStatus_e status, bool validated) {
@@ -426,11 +443,18 @@ UX_FLOW(ux_multiple_action_sign_flow,
         &ux_multiple_action_sign_flow_4_step);
 
 void ui_display_multiple_action_sign_flow(void) {
-    snprintf(actionCounter,
-             sizeof(actionCounter),
-             "%d actions",
-             txProcessingCtx.currentActionNumber);
-    ux_flow_init(0, ux_multiple_action_sign_flow, NULL);
+    uint8_t effectiveActions =
+        txProcessingCtx.currentActionNumber - txProcessingCtx.stateNeutralActionCount;
+    effectiveActionIndex = 1;
+
+    if (effectiveActions > 1) {
+        snprintf(actionCounter, sizeof(actionCounter), "%d actions", effectiveActions);
+        ux_flow_init(0, ux_multiple_action_sign_flow, NULL);
+    } else {
+        for (uint32_t i = 0; i < txProcessingCtx.currentActionNumber; i++) {
+            ui_display_single_action_sign_flow();
+        }
+    }
 }
 
 #endif
