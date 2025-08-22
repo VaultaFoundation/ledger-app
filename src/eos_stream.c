@@ -542,6 +542,7 @@ static void processActionListSizeField(txProcessingContext_t *context) {
                          context->currentFieldPos + 1,
                          &context->currentActionNumber);
         context->currentActionIndex = 0;
+        context->stateNeutralActionCount = 0;
 
         // Reset size buffer
         memset(context->sizeBuffer, 0, sizeof(context->sizeBuffer));
@@ -840,7 +841,6 @@ static void processActionData(txProcessingContext_t *context) {
         } else {
             context->state = TLV_TX_EXTENSION_LIST_SIZE;
         }
-
         context->processingField = false;
         context->actionReady = true;
     }
@@ -940,11 +940,13 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA_SIZE:
-                // content args avalible after processActionAccount & processActionName
+                // count state netural actions only when verbose is OFF
+                // when verbose is ON we treat every action the same
                 if (isStateNeutralAction(context->content->contract,
                                          context->content->action,
-                                         context->content->noData)) {
-                    context->stateNeutralActionCount = context->stateNeutralActionCount + 1;
+                                         context->content->noData) &&
+                    !context->content->isVerbose) {
+                    context->stateNeutralActionCount++;
                 }
                 if (isKnownAction(context) || context->unknownActionAllowed != 1) {
                     processField(context);

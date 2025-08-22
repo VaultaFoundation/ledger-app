@@ -383,6 +383,7 @@ void ui_display_single_action_sign_flow() {
                 wr2 < 0) {
                 ui_abort_unknown_action();
             } else {
+                effectiveActionIndex++;
                 ux_flow_init(0, ux_display_short_sign_flow_steps, NULL);
             }
         }
@@ -395,10 +396,9 @@ void ui_display_single_action_sign_flow() {
             strlcpy(confirm_text1, "Accept", sizeof(confirm_text1));
             strlcpy(confirm_text2, "& review next", sizeof(confirm_text2));
         }
-
+        effectiveActionIndex++;
         ux_flow_init(0, ux_single_action_sign_flow, NULL);
     }
-    effectiveActionIndex++;
 }
 
 void ui_display_action_sign_done(parserStatus_e status, bool validated) {
@@ -451,9 +451,7 @@ void ui_display_multiple_action_sign_flow(void) {
         snprintf(actionCounter, sizeof(actionCounter), "%d actions", effectiveActions);
         ux_flow_init(0, ux_multiple_action_sign_flow, NULL);
     } else {
-        for (uint32_t i = 0; i < txProcessingCtx.currentActionNumber; i++) {
-            ui_display_single_action_sign_flow();
-        }
+        ui_display_single_action_sign_flow();
     }
 }
 
