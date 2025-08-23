@@ -90,8 +90,7 @@ typedef enum parserStatus_e {
     STREAM_ACTION_READY,
     STREAM_CONFIRM_PROCESSING,
     STREAM_FINISHED,
-    STREAM_NOT_ALLOWED,
-    STREAM_SIGN
+    STREAM_NOT_ALLOWED
 } parserStatus_e;
 
 void initTxContext(txProcessingContext_t *context,

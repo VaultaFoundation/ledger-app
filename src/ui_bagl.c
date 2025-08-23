@@ -383,21 +383,21 @@ void ui_display_single_action_sign_flow() {
                 wr2 < 0) {
                 ui_abort_unknown_action();
             } else {
-                effectiveActionIndex++;
                 ux_flow_init(0, ux_display_short_sign_flow_steps, NULL);
             }
         }
     } else {
         // --- Default: Full review flow : not state-neutral action ---
-        if (txProcessingCtx.currentActionIndex == txProcessingCtx.currentActionNumber) {
+        if (txProcessingCtx.currentActionIndex == txProcessingCtx.currentActionNumber ||
+            effectiveActionIndex == effectiveActions) {
             strlcpy(confirm_text1, "Sign", sizeof(confirm_text1));
             strlcpy(confirm_text2, "transaction", sizeof(confirm_text2));
         } else {
             strlcpy(confirm_text1, "Accept", sizeof(confirm_text1));
             strlcpy(confirm_text2, "& review next", sizeof(confirm_text2));
         }
-        effectiveActionIndex++;
         ux_flow_init(0, ux_single_action_sign_flow, NULL);
+        effectiveActionIndex++;
     }
 }
 
@@ -451,6 +451,7 @@ void ui_display_multiple_action_sign_flow(void) {
         snprintf(actionCounter, sizeof(actionCounter), "%d actions", effectiveActions);
         ux_flow_init(0, ux_multiple_action_sign_flow, NULL);
     } else {
+        user_action_sign_flow_ok();
         ui_display_single_action_sign_flow();
     }
 }

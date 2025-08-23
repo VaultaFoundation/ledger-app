@@ -53,25 +53,6 @@
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
 
-void initTxContext(txProcessingContext_t *context,
-                   cx_sha256_t *sha256,
-                   cx_sha256_t *dataSha256,
-                   txProcessingContent_t *processingContent,
-                   uint8_t allowUnknownAction,
-                   uint8_t verboseSetting) {
-    memset(context, 0, sizeof(txProcessingContext_t));
-    context->sha256 = sha256;
-    context->dataSha256 = dataSha256;
-    context->content = processingContent;
-    context->state = TLV_CHAIN_ID;
-    context->unknownActionAllowed = allowUnknownAction;
-    context->content->isVerbose = verboseSetting;
-    context->content->noData = 0;
-    context->stateNeutralActionCount = 0;
-    cx_sha256_init(context->sha256);
-    cx_sha256_init(context->dataSha256);
-}
-
 uint8_t readTxByte(txProcessingContext_t *context) {
     uint8_t data;
     LEDGER_ASSERT(context->commandLength >= 1, "readTxByte Underflow");
@@ -940,14 +921,6 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA_SIZE:
-                // count state netural actions only when verbose is OFF
-                // when verbose is ON we treat every action the same
-                if (isStateNeutralAction(context->content->contract,
-                                         context->content->action,
-                                         context->content->noData) &&
-                    !context->content->isVerbose) {
-                    context->stateNeutralActionCount++;
-                }
                 if (isKnownAction(context) || context->unknownActionAllowed != 1) {
                     processField(context);
                 } else {
@@ -1041,4 +1014,78 @@ parserStatus_e parseTx(txProcessingContext_t *context, uint8_t *buffer, uint32_t
     }
 #endif
     return processTxInternal(context);
+}
+
+/**
+ * Parse the transaction preserving the original context state.
+ * Iterates through all actions by running parseTxInternal,
+ * then restores the original context state.
+ */
+void parseTxWithStatePreservation(txProcessingContext_t *context) {
+    // Save the original context state
+    txProcessingContext_t savedContext;
+    memcpy(&savedContext, context, sizeof(txProcessingContext_t));
+
+    // Initialize parsing with the provided buffer and length
+    context->workBuffer = NULL;
+    context->commandLength = 0;
+
+    parserStatus_e status = STREAM_PROCESSING;
+    uint32_t stateNeutralActionCount = 0;
+
+    // Initial parsing: first action
+    status = processTxInternal(context);
+    // If action is state neutral and verbose is 0, increment stateNeutralActionCount
+    if (isStateNeutralAction(context->content->contract,
+                             context->content->action,
+                             context->content->noData) &&
+        context->content->isVerbose == 0) {
+        stateNeutralActionCount++;
+    }
+    int loop = 1;
+
+    // Run through any additional actions through all actions until finished or error
+    while ((status == STREAM_PROCESSING || status == STREAM_ACTION_READY ||
+            status == STREAM_CONFIRM_PROCESSING) &&
+           loop > 0) {
+        // process next action
+        status = processTxInternal(context);
+        loop--;
+        // If action is state neutral and verbose is 0, increment stateNeutralActionCount
+        if (isStateNeutralAction(context->content->contract,
+                                 context->content->action,
+                                 context->content->noData) &&
+            context->content->isVerbose == 0) {
+            stateNeutralActionCount++;
+        }
+        if (status == STREAM_FINISHED) {
+            break;
+        }
+        if (status == STREAM_FAULT || status == STREAM_NOT_ALLOWED) {
+            break;
+        }
+    }
+
+    // Restore the original context state
+    memcpy(context, &savedContext, sizeof(txProcessingContext_t));
+    context->stateNeutralActionCount = stateNeutralActionCount;
+}
+void initTxContext(txProcessingContext_t *context,
+                   cx_sha256_t *sha256,
+                   cx_sha256_t *dataSha256,
+                   txProcessingContent_t *processingContent,
+                   uint8_t allowUnknownAction,
+                   uint8_t verboseSetting) {
+    memset(context, 0, sizeof(txProcessingContext_t));
+    context->sha256 = sha256;
+    context->dataSha256 = dataSha256;
+    context->content = processingContent;
+    context->state = TLV_CHAIN_ID;
+    context->unknownActionAllowed = allowUnknownAction;
+    context->content->isVerbose = verboseSetting;
+    context->content->noData = 0;
+    context->stateNeutralActionCount = 0;
+    cx_sha256_init(context->sha256);
+    cx_sha256_init(context->dataSha256);
+    parseTxWithStatePreservation(context);
 }
