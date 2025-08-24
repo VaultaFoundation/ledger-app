@@ -105,7 +105,7 @@ def process_transaction_with_mixed_actions(test_name: str,
         instructions = [NavInsID.USE_CASE_REVIEW_TAP] * taps
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
     else:
-        taps = 3 + (act1_arg_count) // 2 + (act2_arg_count) // 2
+        taps = 3 + (act1_arg_count)//2 + (act2_arg_count) // 2
         instructions = [NavInsID.USE_CASE_REVIEW_TAP] * taps
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
 

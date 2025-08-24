@@ -367,24 +367,7 @@ void ui_display_single_action_sign_flow() {
     */
     if (!txProcessingCtx.isVerbose &&
         isStateNeutralAction(txContent.contract, txContent.action, txContent.noData)) {
-        // For multi-action transaction: skip review for neutral action
-        if (txProcessingCtx.currentActionNumber > 1) {
-            user_action_sign_flow_ok();
-        } else {
-            // Single state-neutral action (only action in tx)
-            // Special short flow
-            unsigned int wr1 =
-                snprintf(confirm_text1, sizeof(confirm_text1), "Sign %s", txContent.action);
-            unsigned int wr2 =
-                snprintf(confirm_text2, sizeof(confirm_text2), "From %s", txContent.contract);
-
-            if (wr1 >= sizeof(confirm_text1) || wr1 < 0 || wr2 >= sizeof(confirm_text2) ||
-                wr2 < 0) {
-                ui_abort_unknown_action();
-            } else {
-                ux_flow_init(0, ux_display_short_sign_flow_steps, NULL);
-            }
-        }
+        user_action_sign_flow_ok();
     } else {
         // --- Default: Full review flow : not state-neutral action ---
         if (txProcessingCtx.currentActionIndex == txProcessingCtx.currentActionNumber ||

@@ -107,15 +107,15 @@ def noop_sign_transaction(test_name: str,
 
     # Known Actions Continue
     if device.is_nano:
-        instructions = [NavInsID.RIGHT_CLICK, NavInsID.LEFT_CLICK, NavInsID.BOTH_CLICK]
+        instructions = []
     else:
-        instructions = [NavInsID.BOTH_CLICK, NavInsID.RIGHT_CLICK]
+        instructions = [NavInsID.USE_CASE_REVIEW_CONFIRM]
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
                     folder_name,
                     instructions,
                     timeout=10,
-                    screen_change_before_first_instruction=True
+                    screen_change_before_first_instruction=False
                     )
     rapdu = client.get_async_response()
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
