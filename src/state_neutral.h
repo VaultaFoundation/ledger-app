@@ -22,3 +22,5 @@ static inline bool isStateNeutralAction(const char *contract, const char *action
     return (strcmp(contract_lower, "null.vaulta") == 0 && strcmp(action, "noop") == 0 &&
             noData == 1);
 }
+
+extern unsigned int countStateNeutralActions;

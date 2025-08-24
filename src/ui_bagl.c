@@ -338,8 +338,7 @@ static void display_next_state(uint8_t state) {
 void ui_display_single_action_sign_flow() {
     ux_step = 0;
     ux_step_count = txContent.argumentCount;
-    uint8_t effectiveActions =
-        txProcessingCtx.currentActionNumber - txProcessingCtx.stateNeutralActionCount;
+    uint8_t effectiveActions = txProcessingCtx.currentActionNumber - countStateNeutralActions;
 
     // Label the review screen differently for single vs. multi-action transactions
     if (effectiveActions > 1) {
@@ -366,7 +365,7 @@ void ui_display_single_action_sign_flow() {
     ** The code also manages UI steps and transitions for reviewing single or multiple actions,
     ** with specific UX flows for each case.
     */
-    if (!txContent.isVerbose &&
+    if (!txProcessingCtx.isVerbose &&
         isStateNeutralAction(txContent.contract, txContent.action, txContent.noData)) {
         // For multi-action transaction: skip review for neutral action
         if (txProcessingCtx.currentActionNumber > 1) {
@@ -443,8 +442,7 @@ UX_FLOW(ux_multiple_action_sign_flow,
         &ux_multiple_action_sign_flow_4_step);
 
 void ui_display_multiple_action_sign_flow(void) {
-    uint8_t effectiveActions =
-        txProcessingCtx.currentActionNumber - txProcessingCtx.stateNeutralActionCount;
+    uint8_t effectiveActions = txProcessingCtx.currentActionNumber - countStateNeutralActions;
     effectiveActionIndex = 1;
 
     if (effectiveActions > 1) {

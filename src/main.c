@@ -31,6 +31,7 @@
 #include "config.h"
 #include "ui.h"
 #include "main.h"
+#include "state_neutral.h"
 
 uint32_t get_public_key_and_set_result(void);
 uint32_t sign_hash_and_set_result(void);
@@ -56,6 +57,8 @@ cx_sha256_t dataSha256;
 txProcessingContext_t txProcessingCtx;
 txProcessingContent_t txContent;
 sharedContext_t tmpCtx;
+
+unsigned int countStateNeutralActions;
 
 static void io_exchange_with_code(uint16_t code, uint32_t tx) {
     G_io_apdu_buffer[tx++] = code >> 8;
@@ -305,12 +308,17 @@ uint32_t handleSign(uint8_t p1,
             workBuffer += 4;
             dataLength -= 4;
         }
+
+        // need this state neutral count outside of the mutating txProcessingCtx
+        countStateNeutralActions =
+            preparseTransaction(workBuffer, dataLength, is_verbose() ? 0x01 : 0x00);
         initTxContext(&txProcessingCtx,
                       &sha256,
                       &dataSha256,
                       &txContent,
                       is_unknown_action_allowed() ? 0x01 : 0x00,
                       is_verbose() ? 0x01 : 0x00);
+
     } else if (p1 != P1_MORE) {
         return 0x6B00;
     }

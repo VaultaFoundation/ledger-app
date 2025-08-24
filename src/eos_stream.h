@@ -25,7 +25,6 @@
 #include "eos_parse.h"
 
 typedef struct txProcessingContent_t {
-    uint8_t isVerbose;
     uint8_t noData;
     char argumentCount;
     char contract[14];
@@ -68,7 +67,6 @@ typedef struct txProcessingContext_t {
     uint32_t currentAutorizationNumber;
     uint32_t currentActionIndex;
     uint32_t currentActionNumber;
-    uint32_t stateNeutralActionCount;
     uint32_t currentActionDataBufferLength;
     bool processingField;
     uint8_t tlvBuffer[5];
@@ -80,6 +78,7 @@ typedef struct txProcessingContext_t {
     uint8_t sizeBuffer[12];
     uint8_t actionDataBuffer[512];
     uint8_t unknownActionAllowed;
+    uint8_t isVerbose;
     checksum256 dataChecksum;
     txProcessingContent_t *content;
 } txProcessingContext_t;
@@ -99,6 +98,8 @@ void initTxContext(txProcessingContext_t *context,
                    txProcessingContent_t *processingContent,
                    uint8_t unknownActionAllowed,
                    uint8_t isVerbose);
+
+unsigned int preparseTransaction(uint8_t *workBuffer, uint16_t scratchLength, uint8_t verbose);
 
 static inline bool isStateNeutralAction(const char *contract, const char *action, uint8_t noData);
 

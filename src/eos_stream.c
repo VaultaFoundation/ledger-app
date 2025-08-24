@@ -53,6 +53,24 @@
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
 
+void initTxContext(txProcessingContext_t *context,
+                   cx_sha256_t *sha256,
+                   cx_sha256_t *dataSha256,
+                   txProcessingContent_t *processingContent,
+                   uint8_t allowUnknownAction,
+                   uint8_t verboseSetting) {
+    memset(context, 0, sizeof(txProcessingContext_t));
+    context->sha256 = sha256;
+    context->dataSha256 = dataSha256;
+    context->content = processingContent;
+    context->state = TLV_CHAIN_ID;
+    context->unknownActionAllowed = allowUnknownAction;
+    context->isVerbose = verboseSetting;
+    context->content->noData = 0;
+    cx_sha256_init(context->sha256);
+    cx_sha256_init(context->dataSha256);
+}
+
 uint8_t readTxByte(txProcessingContext_t *context) {
     uint8_t data;
     LEDGER_ASSERT(context->commandLength >= 1, "readTxByte Underflow");
@@ -216,7 +234,7 @@ static void processUnknownAction(txProcessingContext_t *context) {
                                sizeof(context->dataChecksum)));
     // if verbose ON argument count of 3 to trigger checksum screens
     // if verbose OFF argument count of 1 to only showing single warning screen
-    if (context->content->isVerbose == 1) {
+    if (context->isVerbose == 1) {
         context->content->argumentCount = 3;
     } else {
         context->content->argumentCount = 1;
@@ -523,7 +541,6 @@ static void processActionListSizeField(txProcessingContext_t *context) {
                          context->currentFieldPos + 1,
                          &context->currentActionNumber);
         context->currentActionIndex = 0;
-        context->stateNeutralActionCount = 0;
 
         // Reset size buffer
         memset(context->sizeBuffer, 0, sizeof(context->sizeBuffer));
@@ -1017,75 +1034,67 @@ parserStatus_e parseTx(txProcessingContext_t *context, uint8_t *buffer, uint32_t
 }
 
 /**
- * Parse the transaction preserving the original context state.
- * Iterates through all actions by running parseTxInternal,
- * then restores the original context state.
+ * preparseTransaction
+ *
+ * Pre-processing loop on a transaction to count the number of state-neutral actions.
+ * This count is needed for the UI to handle transactions properly.
+ *
+ * @param workBuffer Pointer to the transaction data buffer.
+ * @param scratchLength Length of the transaction data buffer.
+ * @param verbose Verbose flag to control processing detail.
+ * @return The count of state-neutral actions in the transaction.
  */
-void parseTxWithStatePreservation(txProcessingContext_t *context) {
-    // Save the original context state
-    txProcessingContext_t savedContext;
-    memcpy(&savedContext, context, sizeof(txProcessingContext_t));
+unsigned int preparseTransaction(uint8_t *workBuffer, uint16_t scratchLength, uint8_t verbose) {
+    txProcessingContext_t localCtx;
+    txProcessingContent_t localContent;
+    cx_sha256_t sha256, dataSha256;
 
-    // Initialize parsing with the provided buffer and length
-    context->workBuffer = NULL;
-    context->commandLength = 0;
+    // copy work buffer
+    uint8_t scratch[scratchLength];
+    memcpy(scratch, workBuffer, scratchLength);
 
-    parserStatus_e status = STREAM_PROCESSING;
-    uint32_t stateNeutralActionCount = 0;
+    // initialize a local context (stack only, no side-effects)
+    initTxContext(&localCtx,
+                  &sha256,
+                  &dataSha256,
+                  &localContent,
+                  1,         // allowUnknownAction
+                  verbose);  // verbose off
 
-    // Initial parsing: first action
-    status = processTxInternal(context);
-    // If action is state neutral and verbose is 0, increment stateNeutralActionCount
-    if (isStateNeutralAction(context->content->contract,
-                             context->content->action,
-                             context->content->noData) &&
-        context->content->isVerbose == 0) {
-        stateNeutralActionCount++;
-    }
-    int loop = 1;
+    localCtx.workBuffer = scratch;
+    localCtx.commandLength = scratchLength;
 
-    // Run through any additional actions through all actions until finished or error
-    while ((status == STREAM_PROCESSING || status == STREAM_ACTION_READY ||
-            status == STREAM_CONFIRM_PROCESSING) &&
-           loop > 0) {
-        // process next action
-        status = processTxInternal(context);
-        loop--;
-        // If action is state neutral and verbose is 0, increment stateNeutralActionCount
-        if (isStateNeutralAction(context->content->contract,
-                                 context->content->action,
-                                 context->content->noData) &&
-            context->content->isVerbose == 0) {
-            stateNeutralActionCount++;
-        }
-        if (status == STREAM_FINISHED) {
+    unsigned int count = 0;
+
+    // process until transaction finished or buffer consumed
+    for (;;) {
+        parserStatus_e st = processTxInternal(&localCtx);
+        if (st == STREAM_ACTION_READY) {
+            // We have a fully decoded action
+            name_t contract = localCtx.contractName;
+            name_t action = localCtx.contractActionName;
+            char contractOwner[sizeof(localCtx.content->contract)];
+            char contractActionName[sizeof(localCtx.content->action)];
+            name_to_string(contract, contractOwner, sizeof(localCtx.content->contract));
+            name_to_string(action, contractActionName, sizeof(localCtx.content->action));
+
+            if (!verbose && (isStateNeutralAction(contractOwner,
+                                                  contractActionName,
+                                                  localCtx.content->noData))) {
+                count++;
+            }
+        } else if (st == STREAM_FINISHED || st == STREAM_FAULT || st == STREAM_NOT_ALLOWED) {
             break;
-        }
-        if (status == STREAM_FAULT || status == STREAM_NOT_ALLOWED) {
-            break;
+        } else {
+            // STREAM_PROCESSING or STREAM_CONFIRM_PROCESSING: continue loop
+            if (localCtx.commandLength == 0) {
+                // No more data to feed
+                break;
+            }
         }
     }
+    // clear out scratch for extra security
+    memset(scratch, 0, sizeof(scratch));
 
-    // Restore the original context state
-    memcpy(context, &savedContext, sizeof(txProcessingContext_t));
-    context->stateNeutralActionCount = stateNeutralActionCount;
-}
-void initTxContext(txProcessingContext_t *context,
-                   cx_sha256_t *sha256,
-                   cx_sha256_t *dataSha256,
-                   txProcessingContent_t *processingContent,
-                   uint8_t allowUnknownAction,
-                   uint8_t verboseSetting) {
-    memset(context, 0, sizeof(txProcessingContext_t));
-    context->sha256 = sha256;
-    context->dataSha256 = dataSha256;
-    context->content = processingContent;
-    context->state = TLV_CHAIN_ID;
-    context->unknownActionAllowed = allowUnknownAction;
-    context->content->isVerbose = verboseSetting;
-    context->content->noData = 0;
-    context->stateNeutralActionCount = 0;
-    cx_sha256_init(context->sha256);
-    cx_sha256_init(context->dataSha256);
-    parseTxWithStatePreservation(context);
+    return count;
 }
