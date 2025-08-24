@@ -1,17 +1,16 @@
 from json import load
 import pytest
-import time
 
 from ledgered.devices import Device, DeviceType # type: ignore
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
-from ragger.navigator import NavInsID, NavIns
+from ragger.navigator import NavInsID
 from ragger.utils import split_message
 from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 from ragger.error import ExceptionRAPDU
 
-from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
+from apps.eos import EosClient, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
 from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR, TAGGED_CORPUS_FILES
 # Proposed EOS derivation paths for tests ###
@@ -112,8 +111,8 @@ def noop_sign_transaction(test_name: str,
     else:
         instructions = [NavInsID.BOTH_CLICK, NavInsID.RIGHT_CLICK]
     with client.send_async_sign_message(VAULTA_PATH, message):
-        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, 
-                    folder_name, 
+        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
+                    folder_name,
                     instructions,
                     timeout=10,
                     screen_change_before_first_instruction=True

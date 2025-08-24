@@ -71,7 +71,7 @@ def test_noop_mixed_transactions_with_verbose(test_name: str,
         transaction_filename,
         action_one_args,
         action_two_args)
-    
+
 @pytest.mark.parametrize("subdir, transaction_filename", [
     ('null.vaulta', 'mixed_transaction_noop_with_data_trans.json'),
     ('null.vaulta', 'mixed_transaction_noop_trans.json')
