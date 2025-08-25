@@ -663,10 +663,50 @@ static void processAuthorizationListSizeField(txProcessingContext_t *context) {
 }
 
 /**
+ * Process Authorization Account Name Field.
+ */
+static void processAuthorizationAccount(txProcessingContext_t *context) {
+    // hold uint representing authorization name
+    name_t authorizationName;
+
+    if (context->currentFieldPos < context->currentFieldLength) {
+        uint32_t length =
+            (context->commandLength < ((context->currentFieldLength - context->currentFieldPos))
+                 ? context->commandLength
+                 : context->currentFieldLength - context->currentFieldPos);
+
+        LEDGER_ASSERT(length <= context->commandLength, "processField");
+        hashTxData(context, context->workBuffer, length);
+
+        uint8_t *pAuthName = (uint8_t *) &authorizationName;
+        LEDGER_ASSERT(length <= sizeof(context->sizeBuffer) - context->currentFieldPos,
+                      "processAuthorizationPermission");
+        memmove(pAuthName + context->currentFieldPos, context->workBuffer, length);
+
+        context->workBuffer += length;
+        context->commandLength -= length;
+        context->currentFieldPos += length;
+    }
+
+    if (context->currentFieldPos == context->currentFieldLength) {
+        context->state++;
+        context->processingField = false;
+
+        memset(context->currentAuthorizationName, 0, sizeof(context->currentAuthorizationName));
+        name_to_string(authorizationName,
+                       context->currentAuthorizationName,
+                       sizeof(context->currentAuthorizationName));
+    }
+}
+
+/**
  * Process Authorization Permission Field. When the field is processed
  * start over authorization processing if the there is data for that.
  */
 static void processAuthorizationPermission(txProcessingContext_t *context) {
+    // hold uint representing authorization permission
+    name_t authorizationPermission;
+
     if (context->currentFieldPos < context->currentFieldLength) {
         uint32_t length =
             (context->commandLength < ((context->currentFieldLength - context->currentFieldPos))
@@ -675,6 +715,11 @@ static void processAuthorizationPermission(txProcessingContext_t *context) {
 
         LEDGER_ASSERT(length <= context->commandLength, "processAuthorizationPermission");
         hashTxData(context, context->workBuffer, length);
+
+        uint8_t *pAuthPerms = (uint8_t *) &authorizationPermission;
+        LEDGER_ASSERT(length <= sizeof(context->sizeBuffer) - context->currentFieldPos,
+                      "processAuthorizationPermission");
+        memmove(pAuthPerms + context->currentFieldPos, context->workBuffer, length);
 
         context->workBuffer += length;
         context->commandLength -= length;
@@ -694,6 +739,13 @@ static void processAuthorizationPermission(txProcessingContext_t *context) {
             context->state++;
         }
         context->processingField = false;
+
+        memset(context->currentAuthorizationPermission,
+               0,
+               sizeof(context->currentAuthorizationPermission));
+        name_to_string(authorizationPermission,
+                       context->currentAuthorizationPermission,
+                       sizeof(context->currentAuthorizationPermission));
     }
 }
 
@@ -930,7 +982,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_AUTHORIZATION_ACTOR:
-                processField(context);
+                processAuthorizationAccount(context);
                 break;
 
             case TLV_AUTHORIZATION_PERMISSION:
@@ -1003,13 +1055,13 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
  * HEADER size may vary due to MAX_NET_USAGE_WORDS and DELAY_SEC serialization:
  * [EXPIRATION][REF_BLOCK_NUM][REF_BLOCK_PREFIX][MAX_NET_USAGE_WORDS][MAX_CPU_USAGE_MS][DELAY_SEC]
  *
- * CTX_FREE_ACTION_NUMBER theoretically is not fixed due to serialization. Ledger accepts only 0 as
- * encoded value. ACTION_NUMBER theoretically is not fixed due to serialization.
+ * CTX_FREE_ACTION_NUMBER theoretically is not fixed due to serialization. Ledger accepts only 0
+ * as encoded value. ACTION_NUMBER theoretically is not fixed due to serialization.
  *
  * ACTION size may vary as authorization list and action data is dynamic:
  * [ACCOUNT][NAME][AUTHORIZATION_NUMBER][AUTHORIZATION 0][AUTHORIZATION 1]..[AUTHORIZATION
- * N][ACTION_DATA] ACCOUNT and NAME are 8 bytes long, both. AUTHORIZATION_NUMBER theoretically is
- * not fixed due to serialization. ACTION_DATA is octet string of bytes.
+ * N][ACTION_DATA] ACCOUNT and NAME are 8 bytes long, both. AUTHORIZATION_NUMBER theoretically
+ * is not fixed due to serialization. ACTION_DATA is octet string of bytes.
  *
  * AUTHORIZATION is 16 bytes long:
  * [ACTOR][PERMISSION]

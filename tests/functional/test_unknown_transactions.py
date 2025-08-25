@@ -80,9 +80,15 @@ def process_transaction_with_mixed_actions(test_name: str,
                                     subdir,
                                     transaction_filename: str,
                                     act1_arg_count=1,
-                                    act2_arg_count=1):
+                                    act2_arg_count=1,
+                                    verbose=False):
 
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir, transaction_filename)
+
+    if verbose:
+        authorization_screens = 2
+    else:
+        authorization_screens = 0
 
     _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
@@ -94,10 +100,10 @@ def process_transaction_with_mixed_actions(test_name: str,
         instructions = [NavInsID.RIGHT_CLICK] * 2
         instructions.append(NavInsID.BOTH_CLICK)
         # process first transaction
-        instructions += [NavInsID.RIGHT_CLICK] * (3 + act1_arg_count)
+        instructions += [NavInsID.RIGHT_CLICK] * (3 + act1_arg_count + authorization_screens)
         instructions.append(NavInsID.BOTH_CLICK)
         # process second transaction
-        instructions += [NavInsID.RIGHT_CLICK] * (3 + act2_arg_count)
+        instructions += [NavInsID.RIGHT_CLICK] * (3 + act2_arg_count + authorization_screens)
         instructions.append(NavInsID.BOTH_CLICK)
     elif device.type == DeviceType.FLEX:
         # flex screen wraps requiring additional screen and another tap
@@ -126,6 +132,7 @@ def test_sign_transaction_mixed_actions(test_name: str,
 
     # Allow Unknown Actions: navigate and turn on settings
     run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator)
+    verbose = True
     if device.is_nano:
         action_one_args = 3 # buyram
         action_two_args = 3 # unknown
@@ -140,7 +147,8 @@ def test_sign_transaction_mixed_actions(test_name: str,
         None,
         transaction_filename,
         action_one_args,
-        action_two_args)
+        action_two_args,
+        verbose)
 
 
 # This transaction contains multiples actions which fit in one APDU.

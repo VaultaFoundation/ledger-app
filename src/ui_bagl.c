@@ -285,7 +285,8 @@ UX_STEP_CB(ux_single_action_sign_flow_8_step,
                "Cancel",
                "signature",
            });
-
+////////////////////////////////////////////////////////////////////////////////
+// When Not Verbose: Single Action Flow
 // Full multi-step review flow for a single action with arguments
 UX_FLOW(ux_single_action_sign_flow,
         &ux_single_action_sign_flow_1_step,
@@ -299,6 +300,35 @@ UX_FLOW(ux_single_action_sign_flow,
 
 // Short-form signing flow (used when action is known to be state-neutral)
 UX_FLOW(ux_display_short_sign_flow_steps,
+        &ux_single_action_sign_flow_7_step,
+        &ux_single_action_sign_flow_8_step);
+
+////////////////////////////////////////////////////////////////////////////////
+// When Verbose: Authorization Screen
+UX_STEP_NOCB(ux_authorization_flow_1_step,
+             bn,
+             {
+                 "Authorization",
+                 txProcessingCtx.currentAuthorizationName,
+             });
+
+// Step 3: Show the action/method being invoked on the contract
+UX_STEP_NOCB(ux_authorization_flow_2_step,
+             bn,
+             {
+                 "Permission",
+                 txProcessingCtx.currentAuthorizationPermission,
+             });
+
+UX_FLOW(ux_verbose_single_action_flow,
+        &ux_single_action_sign_flow_1_step,
+        &ux_single_action_sign_flow_2_step,
+        &ux_single_action_sign_flow_3_step,
+        &ux_authorization_flow_1_step,
+        &ux_authorization_flow_2_step,
+        &ux_init_left_border,
+        &ux_single_action_sign_flow_variable_step,
+        &ux_init_right_border,
         &ux_single_action_sign_flow_7_step,
         &ux_single_action_sign_flow_8_step);
 
@@ -378,7 +408,11 @@ void ui_display_single_action_sign_flow() {
             strlcpy(confirm_text1, "Accept", sizeof(confirm_text1));
             strlcpy(confirm_text2, "& review next", sizeof(confirm_text2));
         }
-        ux_flow_init(0, ux_single_action_sign_flow, NULL);
+        if (txProcessingCtx.isVerbose == 1) {
+            ux_flow_init(0, ux_verbose_single_action_flow, NULL);
+        } else {
+            ux_flow_init(0, ux_single_action_sign_flow, NULL);
+        }
         effectiveActionIndex++;
     }
 }

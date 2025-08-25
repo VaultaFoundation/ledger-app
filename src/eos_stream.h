@@ -65,6 +65,8 @@ typedef struct txProcessingContext_t {
     uint32_t currentFieldPos;
     uint32_t currentAutorizationIndex;
     uint32_t currentAutorizationNumber;
+    char currentAuthorizationName[14];
+    char currentAuthorizationPermission[14];
     uint32_t currentActionIndex;
     uint32_t currentActionNumber;
     uint32_t currentActionDataBufferLength;
