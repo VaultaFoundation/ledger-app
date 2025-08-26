@@ -61,6 +61,7 @@ def test_noop_mixed_transactions_with_verbose(test_name: str,
 
     action_one_args = 1 # noop
     action_two_args = 4 # transfer
+    verbose = True
     run_app_mainmenu_settings_cfg(device, backend, scenario_navigator.navigator,'verbose')
     process_transaction_with_mixed_actions(
         test_name,
@@ -70,7 +71,8 @@ def test_noop_mixed_transactions_with_verbose(test_name: str,
         subdir,
         transaction_filename,
         action_one_args,
-        action_two_args)
+        action_two_args,
+        verbose)
 
 @pytest.mark.parametrize("subdir, transaction_filename", [
     ('null.vaulta', 'mixed_transaction_noop_with_data_trans.json'),

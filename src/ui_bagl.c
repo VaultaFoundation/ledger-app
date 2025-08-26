@@ -251,6 +251,22 @@ UX_STEP_NOCB(ux_single_action_sign_flow_3_step,
                  txContent.action,
              });
 
+// When Verbose: Authorization Screen
+UX_STEP_NOCB(ux_authorization_flow_1_step,
+             bn,
+             {
+                 "Authorization",
+                 txProcessingCtx.currentAuthorizationName,
+             });
+
+// Step 3: Show the action/method being invoked on the contract
+UX_STEP_NOCB(ux_authorization_flow_2_step,
+             bn,
+             {
+                 "Permission",
+                 txProcessingCtx.currentAuthorizationPermission,
+             });
+
 // Step 4: State boundary logic before displaying the first argument
 UX_STEP_INIT(ux_init_left_border, NULL, NULL, { display_next_state(STATE_LEFT_BORDER); });
 
@@ -285,6 +301,7 @@ UX_STEP_CB(ux_single_action_sign_flow_8_step,
                "Cancel",
                "signature",
            });
+
 ////////////////////////////////////////////////////////////////////////////////
 // When Not Verbose: Single Action Flow
 // Full multi-step review flow for a single action with arguments
@@ -298,27 +315,7 @@ UX_FLOW(ux_single_action_sign_flow,
         &ux_single_action_sign_flow_7_step,
         &ux_single_action_sign_flow_8_step);
 
-// Short-form signing flow (used when action is known to be state-neutral)
-UX_FLOW(ux_display_short_sign_flow_steps,
-        &ux_single_action_sign_flow_7_step,
-        &ux_single_action_sign_flow_8_step);
-
 ////////////////////////////////////////////////////////////////////////////////
-// When Verbose: Authorization Screen
-UX_STEP_NOCB(ux_authorization_flow_1_step,
-             bn,
-             {
-                 "Authorization",
-                 txProcessingCtx.currentAuthorizationName,
-             });
-
-// Step 3: Show the action/method being invoked on the contract
-UX_STEP_NOCB(ux_authorization_flow_2_step,
-             bn,
-             {
-                 "Permission",
-                 txProcessingCtx.currentAuthorizationPermission,
-             });
 
 UX_FLOW(ux_verbose_single_action_flow,
         &ux_single_action_sign_flow_1_step,

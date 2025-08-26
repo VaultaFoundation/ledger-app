@@ -116,7 +116,6 @@ def process_transaction_with_mixed_actions(test_name: str,
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
 
     with client.send_async_sign_message_full(messages[0], True):
-        backend.raise_policy = RaisePolicy.RAISE_NOTHING
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
                                        snapshot_folder_name,
                                        instructions)
@@ -139,6 +138,7 @@ def test_sign_transaction_mixed_actions(test_name: str,
     else:
         action_one_args = 4 # buyram
         action_two_args = 3 # unknown
+
     process_transaction_with_mixed_actions(
         test_name,
         device,
