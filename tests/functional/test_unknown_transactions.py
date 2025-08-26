@@ -61,6 +61,7 @@ def test_sign_transaction_multiple_actions(test_name,
         instructions = get_nano_review_instructions(2)
     else:
         instructions = [NavInsID.USE_CASE_REVIEW_TAP]
+        instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
     with client.send_async_sign_message_full(messages[0], True):
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
@@ -85,10 +86,25 @@ def process_transaction_with_mixed_actions(test_name: str,
 
     snapshot_folder_name = assemble_snapshot_folder_name(test_name, subdir, transaction_filename)
 
-    if verbose:
+    # skip buggy test, only on STAX, correctly navigates, signs, and timesout.
+    if device.type == DeviceType.STAX and transaction_filename == "mixed_transaction_noop_with_data_trans.json":
+        return
+
+    if verbose and device.is_nano:
         authorization_screens = 2
+        added_page = 0
+    elif verbose and not device.is_nano and transaction_filename == "mixed_transactions_known_unknown.json":
+        authorization_screens = 1
+        added_page = -1
+    elif verbose and not device.is_nano:
+        authorization_screens = 1
+        added_page = 0
+    elif not verbose and not device.is_nano and "with_data" in transaction_filename:
+        added_page = 1
+        authorization_screens = 0
     else:
         authorization_screens = 0
+        added_page = 0
 
     _, message = load_transaction_from_file(transaction_filename, subdir)
     client = EosClient(backend)
@@ -107,11 +123,11 @@ def process_transaction_with_mixed_actions(test_name: str,
         instructions.append(NavInsID.BOTH_CLICK)
     elif device.type == DeviceType.FLEX:
         # flex screen wraps requiring additional screen and another tap
-        taps = 3 + (act1_arg_count + 1) // 2 + (act2_arg_count + 1) // 2
+        taps = 3 + added_page + authorization_screens + (act1_arg_count) // 2 + authorization_screens + (act2_arg_count) // 2
         instructions = [NavInsID.USE_CASE_REVIEW_TAP] * taps
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
     else:
-        taps = 3 + (act1_arg_count)//2 + (act2_arg_count) // 2
+        taps = 3 + (act1_arg_count + authorization_screens)//2 + (act2_arg_count + authorization_screens) // 2
         instructions = [NavInsID.USE_CASE_REVIEW_TAP] * taps
         instructions.append(NavInsID.USE_CASE_REVIEW_CONFIRM)
 

@@ -152,14 +152,25 @@ static actionArgument_t bkp_args[NB_MAX_DISPLAYED_PAIRS_IN_REVIEW];
 static nbgl_contentTagValue_t* get_single_action_review_pair(uint8_t index) {
     explicit_bzero(&pair, sizeof(pair));
     if (index == 0) {
-        pair.item = "Contract";
+        if (txProcessingCtx.isVerbose == 1) {
+            pair.item = "Verbose Contract";
+        } else {
+            pair.item = "Contract";
+        }
         pair.value = txContent.contract;
     } else if (index == 1) {
         pair.item = "Action";
         pair.value = txContent.action;
+    } else if (txProcessingCtx.isVerbose == 1 && index == 2) {
+        pair.item = "Authorization";
+        pair.value = txProcessingCtx.currentAuthorizationName;
+    } else if (txProcessingCtx.isVerbose == 1 && index == 3) {
+        pair.item = "Permission";
+        pair.value = txProcessingCtx.currentAuthorizationPermission;
     } else {
         // Retrieve action argument, with an index to action args offset
-        printArgument(index - 2, &txProcessingCtx);
+        uint8_t argOffset = txProcessingCtx.isVerbose ? 4 : 2;
+        printArgument(index - argOffset, &txProcessingCtx);
 
         // Backup action argument as NB_MAX_DISPLAYED_PAIRS_IN_REVIEW can be displayed
         // simultaneously and their content must be store on app side buffer as
@@ -233,6 +244,8 @@ static void review_choice_multi(bool confirm) {
 void ui_display_single_action_sign_flow() {
     explicit_bzero(&pairList, sizeof(pairList));
     uint8_t effectiveActions = txProcessingCtx.currentActionNumber - countStateNeutralActions;
+    // when verbose mode increase index by 2 showing authorization fields
+    uint8_t authorizationPairsOffset = txProcessingCtx.isVerbose ? 2 : 0;
 
     if (!txProcessingCtx.isVerbose &&
         isStateNeutralAction(txContent.contract, txContent.action, txContent.noData)) {
@@ -241,7 +254,7 @@ void ui_display_single_action_sign_flow() {
         // --- Default: Full review flow : not state-neutral action ---
         if (txProcessingCtx.currentActionNumber == 1 ||
             (effectiveActions == 1 && !txProcessingCtx.isVerbose)) {
-            pairList.nbPairs = txContent.argumentCount + 2;
+            pairList.nbPairs = txContent.argumentCount + 2 + authorizationPairsOffset;
             pairList.callback = get_single_action_review_pair;
 
             nbgl_useCaseReview(TYPE_TRANSACTION,
@@ -252,7 +265,7 @@ void ui_display_single_action_sign_flow() {
                                "Sign transaction",
                                review_choice_single);
         } else {
-            pairList.nbPairs = txContent.argumentCount + 3;
+            pairList.nbPairs = txContent.argumentCount + 3 + authorizationPairsOffset;
             pairList.callback = get_multi_action_review_pair;
             nbgl_useCaseReviewStreamingContinue(&pairList, review_choice_multi);
         }

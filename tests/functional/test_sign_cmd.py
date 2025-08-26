@@ -109,7 +109,7 @@ def noop_sign_transaction(test_name: str,
     if device.is_nano:
         instructions = []
     else:
-        instructions = [NavInsID.USE_CASE_REVIEW_CONFIRM]
+        instructions = []
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
                     folder_name,
