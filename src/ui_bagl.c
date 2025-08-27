@@ -396,6 +396,10 @@ void ui_display_single_action_sign_flow() {
         isStateNeutralAction(txContent.contract, txContent.action, txContent.noData)) {
         user_action_sign_flow_ok();
     } else {
+        // UI update the state neutral action ""::identity to null::identity
+        if (strcmp(txContent.contract, "") == 0 && strcmp(txContent.action, "identity") == 0) {
+            strlcpy(txContent.contract, "null", sizeof(txContent.contract));
+        }
         // --- Default: Full review flow : not state-neutral action ---
         if (txProcessingCtx.currentActionIndex == txProcessingCtx.currentActionNumber ||
             effectiveActionIndex == effectiveActions) {

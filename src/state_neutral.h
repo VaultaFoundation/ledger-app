@@ -19,8 +19,12 @@ static inline bool isStateNeutralAction(const char *contract, const char *action
         }
     }
     contract_lower[i] = '\0';
-    return (strcmp(contract_lower, "null.vaulta") == 0 && strcmp(action, "noop") == 0 &&
-            noData == 1);
+    // matches either
+    // 1) null.vaulta::noop NO_DATA
+    // 2) ''::identity NO_DATA
+    return ((strcmp(contract_lower, "null.vaulta") == 0 && strcmp(action, "noop") == 0 &&
+             noData == 1) ||
+            (strcmp(contract_lower, "") == 0 && strcmp(action, "identity") == 0 && noData == 1));
 }
 
 extern unsigned int countStateNeutralActions;

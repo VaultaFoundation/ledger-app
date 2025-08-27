@@ -52,6 +52,7 @@
 #define UNLINK_AUTH_ACTION 0xD4E2E9C0DACB4000
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
+#define IDENTITY           0x72553CBB3E000000
 
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
@@ -324,8 +325,10 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
     /* *
      * Actions from trusted account do not change on-chain state
      * These actions are used to set authorization for future on-chain transactions
+     * only 2 actions null::vaulta and 0x00::identity
      * */
-    if (actionName == NOOP_ACTION && contractName == NULL_VAULTA) {
+    if ((actionName == NOOP_ACTION && contractName == NULL_VAULTA) ||
+        (actionName == IDENTITY && contractName == 0x00)) {
         parseNoOperation(bufferLength, arg);
         return;
     }
@@ -402,7 +405,8 @@ static bool isKnownAction(txProcessingContext_t *context) {
      * Actions from trusted account do not change on-chain state
      * These actions are used to set authorization for future on-chain transactions
      * */
-    if (actionName == NOOP_ACTION && contractName == NULL_VAULTA) {
+    if ((actionName == NOOP_ACTION && contractName == NULL_VAULTA) ||
+        (actionName == IDENTITY && contractName == 0x00)) {
         return true;
     }
 
@@ -837,8 +841,9 @@ static void processActionData(txProcessingContext_t *context) {
             processTokenTransfer(context);
 
             // no args or data expected
-        } else if (context->contractActionName == NOOP_ACTION &&
-                   context->contractName == NULL_VAULTA) {
+        } else if ((context->contractActionName == NOOP_ACTION &&
+                    context->contractName == NULL_VAULTA) ||
+                   (context->contractActionName == IDENTITY && context->contractName == 0x00)) {
             processNoOperation(context);
 
         } else if (context->contractActionName == TOKEN_TRANSFER_ACTION &&

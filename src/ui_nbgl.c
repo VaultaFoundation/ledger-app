@@ -152,11 +152,7 @@ static actionArgument_t bkp_args[NB_MAX_DISPLAYED_PAIRS_IN_REVIEW];
 static nbgl_contentTagValue_t* get_single_action_review_pair(uint8_t index) {
     explicit_bzero(&pair, sizeof(pair));
     if (index == 0) {
-        if (txProcessingCtx.isVerbose == 1) {
-            pair.item = "Verbose Contract";
-        } else {
-            pair.item = "Contract";
-        }
+        pair.item = "Contract";
         pair.value = txContent.contract;
     } else if (index == 1) {
         pair.item = "Action";
@@ -251,6 +247,10 @@ void ui_display_single_action_sign_flow() {
         isStateNeutralAction(txContent.contract, txContent.action, txContent.noData)) {
         user_action_sign_flow_ok();  // skip action
     } else {
+        // UI update the state neutral action ""::identity to null::identity
+        if (strcmp(txContent.contract, "") == 0 && strcmp(txContent.action, "identity") == 0) {
+            strlcpy(txContent.contract, "null", sizeof(txContent.contract));
+        }
         // --- Default: Full review flow : not state-neutral action ---
         if (txProcessingCtx.currentActionNumber == 1 ||
             (effectiveActions == 1 && !txProcessingCtx.isVerbose)) {
@@ -274,9 +274,12 @@ void ui_display_single_action_sign_flow() {
 }
 
 void ui_display_action_sign_done(parserStatus_e status, bool validated) {
+    uint8_t effectiveActions = txProcessingCtx.currentActionNumber - countStateNeutralActions;
     if (status == STREAM_FINISHED) {
         if (validated) {
-            nbgl_useCaseReviewStatus(STATUS_TYPE_TRANSACTION_SIGNED, ui_idle);
+            if (effectiveActions > 0) {
+                nbgl_useCaseReviewStatus(STATUS_TYPE_TRANSACTION_SIGNED, ui_idle);
+            }
         } else {
             nbgl_useCaseReviewStatus(STATUS_TYPE_TRANSACTION_REJECTED, ui_idle);
         }
