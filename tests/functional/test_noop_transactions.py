@@ -46,7 +46,7 @@ def test_noop_transactions_no_verbose(test_name: str,
     if 'with_data' in transaction_filename:
         run_sign_transaction(test_name,device,backend,scenario_navigator,subdir,transaction_filename)
     else:
-        noop_sign_transaction(test_name,device,backend,scenario_navigator,subdir,transaction_filename)
+        noop_sign_transaction(test_name,backend,scenario_navigator,subdir,transaction_filename)
 
 @pytest.mark.parametrize("subdir, transaction_filename", [
     ('null.vaulta', 'mixed_transaction_noop_with_data_trans.json'),

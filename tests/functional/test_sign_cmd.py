@@ -1,6 +1,6 @@
+from typing import List
 from json import load
 import pytest
-from typing import List
 from ledgered.devices import Device, DeviceType # type: ignore
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
@@ -89,7 +89,6 @@ def run_sign_transaction(test_name: str,
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
 def noop_sign_transaction(test_name: str,
-                          device: Device,
                           backend: BackendInterface,
                           scenario_navigator: NavigateWithScenario,
                           subdir: str,
