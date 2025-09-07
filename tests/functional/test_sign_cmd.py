@@ -1,6 +1,6 @@
 from json import load
 import pytest
-
+from typing import List
 from ledgered.devices import Device, DeviceType # type: ignore
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
@@ -106,10 +106,7 @@ def noop_sign_transaction(test_name: str,
         return
 
     # Known Actions Continue
-    if device.is_nano:
-        instructions = []
-    else:
-        instructions = []
+    instructions: List[NavInsID] = []
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
                     folder_name,
