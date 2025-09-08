@@ -42,4 +42,3 @@ void parseTokenTransfer(uint8_t *buffer,
         parseStringField(buffer, bufferLength, "Memo", arg, &read, &written);
     }
 }
-
