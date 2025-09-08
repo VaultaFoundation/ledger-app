@@ -671,7 +671,7 @@ static void processAuthorizationListSizeField(txProcessingContext_t *context) {
  */
 static void processAuthorizationAccount(txProcessingContext_t *context) {
     // hold uint representing authorization name
-    name_t authorizationName;
+    name_t authorizationName = 0;
 
     if (context->currentFieldPos < context->currentFieldLength) {
         uint32_t length =
@@ -709,7 +709,7 @@ static void processAuthorizationAccount(txProcessingContext_t *context) {
  */
 static void processAuthorizationPermission(txProcessingContext_t *context) {
     // hold uint representing authorization permission
-    name_t authorizationPermission;
+    name_t authorizationPermission = 0;
 
     if (context->currentFieldPos < context->currentFieldLength) {
         uint32_t length =
