@@ -1,6 +1,6 @@
+from typing import List
 from json import load
 import pytest
-
 from ledgered.devices import Device, DeviceType # type: ignore
 from ragger.backend.interface import RaisePolicy
 from ragger.bip import pack_derivation_path
@@ -10,7 +10,7 @@ from ragger.backend import BackendInterface
 from ragger.navigator.navigation_scenario import NavigateWithScenario
 from ragger.error import ExceptionRAPDU
 
-from apps.eos import EosClient, STATUS_OK, ErrorType, MAX_CHUNK_SIZE
+from apps.eos import EosClient, ErrorType, MAX_CHUNK_SIZE
 from apps.eos_transaction_builder import Transaction
 from utils import ROOT_SCREENSHOT_PATH, CORPUS_DIR, TAGGED_CORPUS_FILES
 # Proposed EOS derivation paths for tests ###
@@ -61,15 +61,12 @@ def handle_unknown_action(client, message, scenario_navigator, folder_name):
     # assert the error and exception occurred
     assert rapdu is None
 
-# TAGGED_CORPUS_FILE is a list of two elements, the subdirectory and the base filename
-# out parameterized tests accepts a list of tuples
-@pytest.mark.parametrize("subdir, transaction_filename", transactions)
-def test_sign_transaction_accepted(test_name: str,
-                                   device: Device,
-                                   backend: BackendInterface,
-                                   scenario_navigator: NavigateWithScenario,
-                                   subdir: str,
-                                   transaction_filename: str):
+def run_sign_transaction(test_name: str,
+                            device: Device,
+                            backend: BackendInterface,
+                            scenario_navigator: NavigateWithScenario,
+                            subdir: str,
+                            transaction_filename: str):
 
     folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
 
@@ -89,9 +86,44 @@ def test_sign_transaction_accepted(test_name: str,
     with client.send_async_sign_message(VAULTA_PATH, message):
         scenario_navigator.review_approve(test_name=folder_name, custom_screen_text=end_text)
     rapdu = client.get_async_response()
-    assert rapdu.status == STATUS_OK
     client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
 
+def noop_sign_transaction(test_name: str,
+                          backend: BackendInterface,
+                          scenario_navigator: NavigateWithScenario,
+                          subdir: str,
+                          transaction_filename: str):
+
+    folder_name = test_name + "/" + subdir + "/" + transaction_filename.replace(".json", "")
+
+    signing_digest, message = load_transaction_from_file(transaction_filename, subdir)
+    client = EosClient(backend)
+
+    # Unknown Actions: not allowed handle separately
+    if subdir == 'wampus' and transaction_filename == 'transaction_valid.json':
+        handle_unknown_action(client, message, scenario_navigator, folder_name)
+        return
+
+    # Known Actions Continue
+    instructions: List[NavInsID] = []
+    with client.send_async_sign_message(VAULTA_PATH, message):
+        scenario_navigator.navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH,
+                    folder_name,
+                    instructions,
+                    timeout=10,
+                    screen_change_before_first_instruction=False
+                    )
+    rapdu = client.get_async_response()
+    client.verify_signature(VAULTA_PATH, signing_digest, rapdu.data)
+
+@pytest.mark.parametrize("subdir, transaction_filename", transactions)
+def test_sign_transaction_accepted(test_name: str,
+                                   device: Device,
+                                   backend: BackendInterface,
+                                   scenario_navigator: NavigateWithScenario,
+                                   subdir: str,
+                                   transaction_filename: str):
+    run_sign_transaction(test_name, device, backend, scenario_navigator, subdir, transaction_filename)
 
 @pytest.mark.parametrize("subdir, transaction_filename", refused_trans)
 def test_sign_transaction_refused(test_name: str,

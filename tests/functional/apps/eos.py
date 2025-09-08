@@ -179,7 +179,7 @@ class EosClient:
         assert signature[33] != 0 or (signature[34] & 0x80) != 0
 
     def verify_signature(self, derivation_path: str,
-                         signing_digest: bytes, signature: bytes) -> None:
+                         signing_digest: bytes, signature: bytes, skipStatusCheck=False) -> None:
         assert len(signature) == 65
         self.check_canonical(signature)
 
@@ -198,7 +198,8 @@ class EosClient:
 
         # Also retrieve public key from INS_GET_PUBLIC_KEY for comparison
         rapdu = self.send_get_public_key_non_confirm(derivation_path, False)
-        assert rapdu.status == STATUS_OK
+        if not skipStatusCheck:
+            assert rapdu.status == STATUS_OK
         public_key_bytes, _, _ = self.parse_get_public_key_response(rapdu.data, False)
 
         # Check that both public key matches

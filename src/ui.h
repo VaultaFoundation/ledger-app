@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 void ui_idle(void);
 void ui_abort_unknown_action(void);
 void ui_display_public_key_flow(void);

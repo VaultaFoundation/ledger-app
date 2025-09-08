@@ -26,6 +26,4 @@ void parseTokenTransfer(uint8_t *buffer,
                         uint8_t argNum,
                         actionArgument_t *arg);
 
-bool isTransferDataValid(uint32_t actionDataBufferLength);
-
 #endif

@@ -25,6 +25,7 @@
 #include "eos_parse_token.h"
 #include "eos_parse_eosio.h"
 #include "eos_parse_unknown.h"
+#include "state_neutral.h"
 
 /* CONTRACT OWNERS */
 #define CORE_VAULTA 0x452EA06CDA8E4C00
@@ -51,18 +52,22 @@
 #define UNLINK_AUTH_ACTION 0xD4E2E9C0DACB4000
 #define NEW_ACCOUNT_ACTION 0x9AB864229A9E4000
 #define NOOP_ACTION        0x9D29500000000000
+#define IDENTITY           0x72553CBB3E000000
 
 void initTxContext(txProcessingContext_t *context,
                    cx_sha256_t *sha256,
                    cx_sha256_t *dataSha256,
                    txProcessingContent_t *processingContent,
-                   uint8_t allowUnknownAction) {
+                   uint8_t allowUnknownAction,
+                   uint8_t verboseSetting) {
     memset(context, 0, sizeof(txProcessingContext_t));
     context->sha256 = sha256;
     context->dataSha256 = dataSha256;
     context->content = processingContent;
     context->state = TLV_CHAIN_ID;
     context->unknownActionAllowed = allowUnknownAction;
+    context->isVerbose = verboseSetting;
+    context->content->noData = 0;
     cx_sha256_init(context->sha256);
     cx_sha256_init(context->dataSha256);
 }
@@ -90,7 +95,6 @@ static void processTokenTransfer(txProcessingContext_t *context) {
     }
 }
 
-/* no-op has no args no abi */
 static void processNoOperation(txProcessingContext_t *context) {
     context->content->argumentCount = 1;
 }
@@ -229,7 +233,13 @@ static void processUnknownAction(txProcessingContext_t *context) {
                                0,
                                context->dataChecksum,
                                sizeof(context->dataChecksum)));
-    context->content->argumentCount = 3;
+    // if verbose ON argument count of 3 to trigger checksum screens
+    // if verbose OFF argument count of 1 to only showing single warning screen
+    if (context->isVerbose == 1) {
+        context->content->argumentCount = 3;
+    } else {
+        context->content->argumentCount = 1;
+    }
 }
 
 static void processEosioNewAccountAction(txProcessingContext_t *context) {
@@ -315,8 +325,10 @@ void printArgument(uint8_t argNum, txProcessingContext_t *context) {
     /* *
      * Actions from trusted account do not change on-chain state
      * These actions are used to set authorization for future on-chain transactions
+     * only 2 actions null::vaulta and 0x00::identity
      * */
-    if (actionName == NOOP_ACTION && contractName == NULL_VAULTA) {
+    if ((actionName == NOOP_ACTION && contractName == NULL_VAULTA) ||
+        (actionName == IDENTITY && contractName == 0x00)) {
         parseNoOperation(bufferLength, arg);
         return;
     }
@@ -393,7 +405,8 @@ static bool isKnownAction(txProcessingContext_t *context) {
      * Actions from trusted account do not change on-chain state
      * These actions are used to set authorization for future on-chain transactions
      * */
-    if (actionName == NOOP_ACTION && contractName == NULL_VAULTA) {
+    if ((actionName == NOOP_ACTION && contractName == NULL_VAULTA) ||
+        (actionName == IDENTITY && contractName == 0x00)) {
         return true;
     }
 
@@ -654,10 +667,50 @@ static void processAuthorizationListSizeField(txProcessingContext_t *context) {
 }
 
 /**
+ * Process Authorization Account Name Field.
+ */
+static void processAuthorizationAccount(txProcessingContext_t *context) {
+    // hold uint representing authorization name
+    name_t authorizationName = 0;
+
+    if (context->currentFieldPos < context->currentFieldLength) {
+        uint32_t length =
+            (context->commandLength < ((context->currentFieldLength - context->currentFieldPos))
+                 ? context->commandLength
+                 : context->currentFieldLength - context->currentFieldPos);
+
+        LEDGER_ASSERT(length <= context->commandLength, "processField");
+        hashTxData(context, context->workBuffer, length);
+
+        uint8_t *pAuthName = (uint8_t *) &authorizationName;
+        LEDGER_ASSERT(length <= sizeof(context->sizeBuffer) - context->currentFieldPos,
+                      "processAuthorizationPermission");
+        memmove(pAuthName + context->currentFieldPos, context->workBuffer, length);
+
+        context->workBuffer += length;
+        context->commandLength -= length;
+        context->currentFieldPos += length;
+    }
+
+    if (context->currentFieldPos == context->currentFieldLength) {
+        context->state++;
+        context->processingField = false;
+
+        memset(context->currentAuthorizationName, 0, sizeof(context->currentAuthorizationName));
+        name_to_string(authorizationName,
+                       context->currentAuthorizationName,
+                       sizeof(context->currentAuthorizationName));
+    }
+}
+
+/**
  * Process Authorization Permission Field. When the field is processed
  * start over authorization processing if the there is data for that.
  */
 static void processAuthorizationPermission(txProcessingContext_t *context) {
+    // hold uint representing authorization permission
+    name_t authorizationPermission = 0;
+
     if (context->currentFieldPos < context->currentFieldLength) {
         uint32_t length =
             (context->commandLength < ((context->currentFieldLength - context->currentFieldPos))
@@ -666,6 +719,11 @@ static void processAuthorizationPermission(txProcessingContext_t *context) {
 
         LEDGER_ASSERT(length <= context->commandLength, "processAuthorizationPermission");
         hashTxData(context, context->workBuffer, length);
+
+        uint8_t *pAuthPerms = (uint8_t *) &authorizationPermission;
+        LEDGER_ASSERT(length <= sizeof(context->sizeBuffer) - context->currentFieldPos,
+                      "processAuthorizationPermission");
+        memmove(pAuthPerms + context->currentFieldPos, context->workBuffer, length);
 
         context->workBuffer += length;
         context->commandLength -= length;
@@ -685,6 +743,13 @@ static void processAuthorizationPermission(txProcessingContext_t *context) {
             context->state++;
         }
         context->processingField = false;
+
+        memset(context->currentAuthorizationPermission,
+               0,
+               sizeof(context->currentAuthorizationPermission));
+        name_to_string(authorizationPermission,
+                       context->currentAuthorizationPermission,
+                       sizeof(context->currentAuthorizationPermission));
     }
 }
 
@@ -776,8 +841,9 @@ static void processActionData(txProcessingContext_t *context) {
             processTokenTransfer(context);
 
             // no args or data expected
-        } else if (context->contractActionName == NOOP_ACTION &&
-                   context->contractName == NULL_VAULTA) {
+        } else if ((context->contractActionName == NOOP_ACTION &&
+                    context->contractName == NULL_VAULTA) ||
+                   (context->contractActionName == IDENTITY && context->contractName == 0x00)) {
             processNoOperation(context);
 
         } else if (context->contractActionName == TOKEN_TRANSFER_ACTION &&
@@ -830,7 +896,6 @@ static void processActionData(txProcessingContext_t *context) {
         } else {
             context->state = TLV_TX_EXTENSION_LIST_SIZE;
         }
-
         context->processingField = false;
         context->actionReady = true;
     }
@@ -838,10 +903,12 @@ static void processActionData(txProcessingContext_t *context) {
 
 static parserStatus_e processTxInternal(txProcessingContext_t *context) {
     for (;;) {
+        // this is multi action processing
         if (context->confirmProcessing) {
             context->confirmProcessing = false;
             return STREAM_CONFIRM_PROCESSING;
         }
+        // this is single action only
         if (context->actionReady) {
             context->actionReady = false;
             return STREAM_ACTION_READY;
@@ -886,6 +953,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
             context->currentFieldPos = 0;
             context->tlvBufferPos = 0;
             context->processingField = true;
+            context->content->noData = (context->currentFieldLength == 0);
         }
         switch (context->state) {
             case TLV_CHAIN_ID:
@@ -919,7 +987,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_AUTHORIZATION_ACTOR:
-                processField(context);
+                processAuthorizationAccount(context);
                 break;
 
             case TLV_AUTHORIZATION_PERMISSION:
@@ -927,7 +995,7 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
                 break;
 
             case TLV_ACTION_DATA_SIZE:
-                if (isKnownAction(context) || context->unknownActionAllowed == 0) {
+                if (isKnownAction(context) || context->unknownActionAllowed != 1) {
                     processField(context);
                 } else {
                     processUnknownActionDataSize(context);
@@ -992,13 +1060,13 @@ static parserStatus_e processTxInternal(txProcessingContext_t *context) {
  * HEADER size may vary due to MAX_NET_USAGE_WORDS and DELAY_SEC serialization:
  * [EXPIRATION][REF_BLOCK_NUM][REF_BLOCK_PREFIX][MAX_NET_USAGE_WORDS][MAX_CPU_USAGE_MS][DELAY_SEC]
  *
- * CTX_FREE_ACTION_NUMBER theoretically is not fixed due to serialization. Ledger accepts only 0 as
- * encoded value. ACTION_NUMBER theoretically is not fixed due to serialization.
+ * CTX_FREE_ACTION_NUMBER theoretically is not fixed due to serialization. Ledger accepts only 0
+ * as encoded value. ACTION_NUMBER theoretically is not fixed due to serialization.
  *
  * ACTION size may vary as authorization list and action data is dynamic:
  * [ACCOUNT][NAME][AUTHORIZATION_NUMBER][AUTHORIZATION 0][AUTHORIZATION 1]..[AUTHORIZATION
- * N][ACTION_DATA] ACCOUNT and NAME are 8 bytes long, both. AUTHORIZATION_NUMBER theoretically is
- * not fixed due to serialization. ACTION_DATA is octet string of bytes.
+ * N][ACTION_DATA] ACCOUNT and NAME are 8 bytes long, both. AUTHORIZATION_NUMBER theoretically
+ * is not fixed due to serialization. ACTION_DATA is octet string of bytes.
  *
  * AUTHORIZATION is 16 bytes long:
  * [ACTOR][PERMISSION]
@@ -1020,4 +1088,70 @@ parserStatus_e parseTx(txProcessingContext_t *context, uint8_t *buffer, uint32_t
     }
 #endif
     return processTxInternal(context);
+}
+
+/**
+ * preparseTransaction
+ *
+ * Pre-processing loop on a transaction to count the number of state-neutral actions.
+ * This count is needed for the UI to handle transactions properly.
+ *
+ * @param workBuffer Pointer to the transaction data buffer.
+ * @param scratchLength Length of the transaction data buffer.
+ * @param verbose Verbose flag to control processing detail.
+ * @return The count of state-neutral actions in the transaction.
+ */
+unsigned int preparseTransaction(uint8_t *workBuffer, uint16_t scratchLength, uint8_t verbose) {
+    txProcessingContext_t localCtx;
+    txProcessingContent_t localContent;
+    cx_sha256_t sha256, dataSha256;
+
+    // copy work buffer
+    uint8_t scratch[scratchLength];
+    memcpy(scratch, workBuffer, scratchLength);
+
+    // initialize a local context (stack only, no side-effects)
+    initTxContext(&localCtx,
+                  &sha256,
+                  &dataSha256,
+                  &localContent,
+                  1,         // allowUnknownAction
+                  verbose);  // verbose off
+
+    localCtx.workBuffer = scratch;
+    localCtx.commandLength = scratchLength;
+
+    unsigned int count = 0;
+
+    // process until transaction finished or buffer consumed
+    for (;;) {
+        parserStatus_e st = processTxInternal(&localCtx);
+        if (st == STREAM_ACTION_READY) {
+            // We have a fully decoded action
+            name_t contract = localCtx.contractName;
+            name_t action = localCtx.contractActionName;
+            char contractOwner[sizeof(localCtx.content->contract)];
+            char contractActionName[sizeof(localCtx.content->action)];
+            name_to_string(contract, contractOwner, sizeof(localCtx.content->contract));
+            name_to_string(action, contractActionName, sizeof(localCtx.content->action));
+
+            if (!verbose && (isStateNeutralAction(contractOwner,
+                                                  contractActionName,
+                                                  localCtx.content->noData))) {
+                count++;
+            }
+        } else if (st == STREAM_FINISHED || st == STREAM_FAULT || st == STREAM_NOT_ALLOWED) {
+            break;
+        } else {
+            // STREAM_PROCESSING or STREAM_CONFIRM_PROCESSING: continue loop
+            if (localCtx.commandLength == 0) {
+                // No more data to feed
+                break;
+            }
+        }
+    }
+    // clear out scratch for extra security
+    memset(scratch, 0, sizeof(scratch));
+
+    return count;
 }
